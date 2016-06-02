@@ -28,7 +28,7 @@ Instagram::Instagram(QString username, QString password, bool debug, QObject *pa
     }
     else
     {
-        qFatal("Username anr/or password is clean");
+        emit error("Username anr/or password is clean");
     }
 
     this->m_data_path =  QDir(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
@@ -107,7 +107,7 @@ void Instagram::doLogin()
     {
         qDebug() << m_data_path.absolutePath()+"/cookies.dat";
         qDebug() << f.errorString();
-        qFatal("Can`t open token file");
+        emit error("Can`t open token file");
     }
     QTextStream in(&f);
     rx.indexIn(in.readAll());
@@ -118,7 +118,7 @@ void Instagram::doLogin()
     }
     else
     {
-        qFatal("Can`t find token");
+        emit error("Can`t find token");
     }
     QUuid uuid;
 
@@ -145,7 +145,7 @@ void Instagram::profileConnect(QVariant profile)
     QJsonObject profile_obj = profile_doc.object();
     if(profile_obj["status"] == "fail")
     {
-        qFatal(profile_obj["message"].toString().toUtf8());
+        emit error(profile_obj["message"].toString().toUtf8());
     }
 
     QJsonObject user = profile_obj["logged_in_user"].toObject();
@@ -569,4 +569,20 @@ void Instagram::getLikedMedia()
     InstagramRequest *getLikedMediaRequest = new InstagramRequest();
     getLikedMediaRequest->request("feedd/liked/?",NULL);
     QObject::connect(getLikedMediaRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(likedMediaDataReady(QVariant)));
+}
+
+
+void Instagram::checkUsername(QString username)
+{
+    InstagramRequest *checkUsernameRequest = new InstagramRequest();
+    QJsonObject data
+    {
+        {"_uuid",        this->m_uuid},
+        {"_csrftoken",   "missing"},
+        {"username",     username},
+    };
+
+    QString signature = checkUsernameRequest->generateSignature(data);
+    checkUsernameRequest->request("users/check_username/",signature.toUtf8());
+    //QObject::connect(checkUsernameRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(usernameCheckDataReady(QVariant)));
 }
