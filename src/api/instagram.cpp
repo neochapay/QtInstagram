@@ -592,5 +592,40 @@ void Instagram::checkUsername(QString username)
 
     QString signature = checkUsernameRequest->generateSignature(data);
     checkUsernameRequest->request("users/check_username/",signature.toUtf8());
-    //QObject::connect(checkUsernameRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(usernameCheckDataReady(QVariant)));
+    QObject::connect(checkUsernameRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(usernameCheckDataReady(QVariant)));
+}
+/*
+ * Return JSON string
+ * {
+ *  "status": STRING    Status of request,
+ *  "errors":{
+ *            ARRAY     Array of errors if aviable
+ *      "password":[],  STRING  Error message if password wrong if aviable
+ *      "email":[],     STRING  Error message if email wrong if aviable
+ *      "FIELD_ID":[]   STRING  Error message if FIELD_ID wrong if aviable
+ *  },
+ *  "account_created",  BOOL Status of creation account
+ *  "created_user"      ARRAY Array of new user params
+ *  }
+ *
+ */
+void Instagram::createAccount(QString username, QString password, QString email)
+{
+    InstagramRequest *createAccountRequest = new InstagramRequest();
+    QJsonObject data
+    {
+        {"_uuid",               this->m_uuid},
+        {"_csrftoken",          "missing"},
+        {"username",            username},
+        {"first_name",          ""},
+        {"guid",                this->m_uuid},
+        {"device_id",           this->m_device_id},
+        {"email",               email},
+        {"force_sign_up_code",  ""},
+        {"qs_stamp",            ""},
+        {"password",            password},
+    };
+    QString signature = createAccountRequest->generateSignature(data);
+    createAccountRequest->request("accounts/create/",signature.toUtf8());
+    QObject::connect(createAccountRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(createAccountDataReady(QVariant)));
 }

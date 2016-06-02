@@ -6,7 +6,7 @@ IMPORTANT: You account may be block if you use this code. Or maybe not ^_^
 You can:
 * Post image (not public yet - give me fiew weeks to optimize code)
 * Post video (not public yet - give me fiew weeks to optimize code)
-* Registration (not public yet - give me fiew weeks to optimize code)
+* Registration
 * Set you profile public or private
 * Edit you profile
 * Change (not public yet) and remove profile picture
