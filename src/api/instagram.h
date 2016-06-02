@@ -71,6 +71,7 @@ private:
     void setUser();
 
 signals:
+    void mediaEdited(QVariant answer);
     void commentPosted(QVariant answer);
     void commentDeleted(QVariant answer);
 
