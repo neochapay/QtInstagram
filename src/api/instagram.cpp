@@ -412,6 +412,25 @@ void Instagram::getTimeLine()
     QObject::connect(getTimeLineRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(timeLineDataReady(QVariant)));
 }
 
+void Instagram::getUsernameFeed(QString usernameID, QString maxid, QString minTimestamp)
+{
+    QString endpoint;
+    endpoint = "feed/user/"+usernameID+"/?rank_token="+this->m_rank_token;
+    if(maxid.length() > 0)
+    {
+        endpoint += "&max_id="+maxid;
+    }
+    if(minTimestamp.length() > 0)
+    {
+        endpoint += "&min_timestamp="+minTimestamp;
+    }
+    endpoint += "&ranked_content=true";
+
+    InstagramRequest *getUserTimeLineRequest = new InstagramRequest();
+    getUserTimeLineRequest->request(endpoint,NULL);
+    QObject::connect(getUserTimeLineRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(userTimeLineDataReady(QVariant)));
+}
+
 void Instagram::getMediaLikers(QString mediaId)
 {
     InstagramRequest *getMediaLikersRequest = new InstagramRequest();
