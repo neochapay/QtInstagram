@@ -40,7 +40,10 @@ void InstagramRequest::request(QString endpoint, QByteArray post)
         QByteArray c;
         s >> c;
         QList<QNetworkCookie> list = QNetworkCookie::parseCookies(c);
-        this->m_jar->insertCookie(list.at(0));
+        if(list.count() > 0)
+        {
+            this->m_jar->insertCookie(list.at(0));
+        }
     }
 
     request.setRawHeader("Connection","close");
