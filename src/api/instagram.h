@@ -17,6 +17,9 @@ public:
     void login(bool forse = false);
     void logout();
 
+    void setUsername(QString username){this->m_username = username;}
+    void setPassword(QString password){this->m_password = password;}
+
     QString getUsernameId(){return this->m_username_id;}
 
     void postImage(QFile image);
