@@ -21,8 +21,15 @@ Instagram::Instagram(QString username, QString password, bool debug, QObject *pa
     : QObject(parent)
 {
     this->m_debug = debug;
-    this->m_username = username;
-    this->m_password = password;
+    if(username.length() > 0 and password.length() > 0)
+    {
+        this->m_username = username;
+        this->m_password = password;
+    }
+    else
+    {
+        qFatal("Username anr/or password is clean");
+    }
 
     this->m_data_path =  QDir(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
 
