@@ -23,6 +23,7 @@ public:
     void postVideo(QFile video);
 
     void editMedia(QString mediaId, QString captionText = "");
+    void deleteMedia(QString mediaId);
     void removeSelftag(QString mediaId);
 
     void postComment(QString mediaId, QString commentText);
@@ -75,6 +76,8 @@ private:
 
 signals:
     void mediaEdited(QVariant answer);
+    void mediaDeleted(QVariant answer);
+
     void removeSelftagDone(QVariant answer);
     void commentPosted(QVariant answer);
     void commentDeleted(QVariant answer);
