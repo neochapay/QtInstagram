@@ -1,5 +1,10 @@
 <RCC>
     <qresource prefix="/">
         <file>main.qml</file>
+        <file>img/icon.svg</file>
+        <file>img/icon64.png</file>
+        <file>img/icon128.png</file>
+        <file>img/icon256.png</file>
+        <file>img/icon512.png</file>
     </qresource>
 </RCC>
