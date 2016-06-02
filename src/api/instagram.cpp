@@ -405,6 +405,13 @@ void Instagram::tagFeed(QString tag)
     QObject::connect(getTagFeedRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(tagFeedDataReady(QVariant)));
 }
 
+void Instagram::getTimeLine()
+{
+    InstagramRequest *getTimeLineRequest = new InstagramRequest();
+    getTimeLineRequest->request("feed/timeline/?rank_token="+this->m_rank_token+"&ranked_content=true&",NULL);
+    QObject::connect(getTimeLineRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(timeLineDataReady(QVariant)));
+}
+
 void Instagram::getMediaLikers(QString mediaId)
 {
     InstagramRequest *getMediaLikersRequest = new InstagramRequest();
