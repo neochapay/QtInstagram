@@ -196,6 +196,21 @@ void Instagram::editMedia(QString mediaId, QString captionText)
     QObject::connect(editMediaRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(mediaEdited(QVariant)));
 }
 
+void Instagram::removeSelftag(QString mediaId)
+{
+    InstagramRequest *removeSelftagRequest = new InstagramRequest();
+    QJsonObject data
+    {
+        {"_uuid",        this->m_uuid},
+        {"_uid",         this->m_username_id},
+        {"_csrftoken",   "Set-Cookie: csrftoken="+this->m_token},
+    };
+
+    QString signature = removeSelftagRequest->generateSignature(data);
+    removeSelftagRequest->request("usertags/"+mediaId+"/remove/",signature.toUtf8());
+    QObject::connect(removeSelftagRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(removeSelftagDone(QVariant)));
+}
+
 void Instagram::postComment(QString mediaId, QString commentText)
 {
     InstagramRequest *postCommentRequest = new InstagramRequest();
