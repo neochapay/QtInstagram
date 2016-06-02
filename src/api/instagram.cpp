@@ -571,7 +571,15 @@ void Instagram::getLikedMedia()
     QObject::connect(getLikedMediaRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(likedMediaDataReady(QVariant)));
 }
 
-
+/*
+ * Return json string
+ * {
+ *   "username":    STRING  Checking username,
+ *   "available":   BOOL    Aviable to registration,
+ *   "status":      STRING  Status of request,
+ *   "error":       STRING  Error string if aviable
+ *   }
+ */
 void Instagram::checkUsername(QString username)
 {
     InstagramRequest *checkUsernameRequest = new InstagramRequest();

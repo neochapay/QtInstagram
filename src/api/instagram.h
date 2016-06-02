@@ -9,8 +9,8 @@ class Instagram : public QObject
 {
     Q_OBJECT
 public:
-    explicit Instagram(QString username,
-                       QString password,
+    explicit Instagram(QString username = "",
+                       QString password = "",
                        bool debug = false,
                        QObject *parent = 0);
 
