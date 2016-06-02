@@ -259,6 +259,27 @@ void Instagram::deleteComment(QString mediaId, QString commentId, QString captio
     QObject::connect(deleteCommentRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(commentDeleted(QVariant)));
 }
 
+//FIXME changeProfilePicture is not public yeat. Give me few weeks to optimize code
+void Instagram::changeProfilePicture(QFile photo)
+{
+
+}
+
+void Instagram::removeProfilePicture()
+{
+    InstagramRequest *removeProfilePictureRequest = new InstagramRequest();
+    QJsonObject data
+    {
+        {"_uuid",        this->m_uuid},
+        {"_uid",         this->m_username_id},
+        {"_csrftoken",   "Set-Cookie: csrftoken="+this->m_token},
+    };
+
+    QString signature = removeProfilePictureRequest->generateSignature(data);
+    removeProfilePictureRequest->request("maccounts/remove_profile_picture/",signature.toUtf8());
+    QObject::connect(removeProfilePictureRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(profilePictureDeleted(QVariant)));
+}
+
 void Instagram::setPrivateAccount()
 {
     InstagramRequest *setPrivateRequest = new InstagramRequest();
