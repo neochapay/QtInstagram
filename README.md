@@ -7,7 +7,16 @@ You can:
 * Post image (not public yet - give me fiew weeks to optimize code)
 * Post video (not public yet - give me fiew weeks to optimize code)
 * Registration (not public yet - give me fiew weeks to optimize code)
+* Set you profile public or private
+* Edit you profile
+* Change (not public yet) and remove profile picture
+* Remove self tags
 * Post comments
 * Send Likes
+* Get recent and follow activity
+* Get user tags and tagfeed
+* Get media likes and comments
+* Get self and users timelines
+
 
 It`s not instagram client yet. Just API code.
