@@ -1,0 +1,1 @@
+This repository is deleted because Facebook prohibits unofficial clients
