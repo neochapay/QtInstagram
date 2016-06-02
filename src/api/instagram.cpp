@@ -84,6 +84,13 @@ void Instagram::login(bool forse)
     }
 }
 
+void Instagram::logout()
+{
+    InstagramRequest *looutRequest = new InstagramRequest();
+    looutRequest->request("accounts/logout/",NULL);
+    QObject::connect(looutRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(doLogout(QVariant)));
+}
+
 void Instagram::doLogin()
 {
     InstagramRequest *request = new InstagramRequest();
