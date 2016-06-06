@@ -23,4 +23,6 @@ HEADERS += \
 
 DISTFILES += \
     img/prosto_back.jpg \
-    img/name1024.png
+    img/name1024.png \
+    qml/pages/FrontPage.qml \
+    qml/main.qml

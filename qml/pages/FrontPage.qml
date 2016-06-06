@@ -1,15 +1,14 @@
 import QtQuick 2.4
 import QtQuick.Window 2.2
 
-Window {
-    visible: true
+Rectangle{
 
     Image{
         id: backImage
         width: parent.width
         height: parent.height
 
-        source: "img/prosto_back.jpg"
+        source: "../../img/prosto_back.jpg"
 
         fillMode: Image.PreserveAspectCrop
 
@@ -18,7 +17,7 @@ Window {
 
     Image {
         id: logoText
-        source: "img/name1024.png"
+        source: "../../img/name1024.png"
 
         width: parent.width-0.25*parent.width
         height: 0.20*parent.height
@@ -65,7 +64,11 @@ Window {
                 text: qsTr("Login")
                 color: "white"
                 width: parent.width
-                height: parent.height-2
+                height: parent.height/3*2
+
+                anchors{
+                    verticalCenter: parent.verticalCenter
+                }
 
                 fontSizeMode: Text.Fit
                 minimumPixelSize: 10
@@ -93,11 +96,15 @@ Window {
                 text: qsTr("Registration")
                 color: "white"
                 width: parent.width
-                height: parent.height-2
+                height: parent.height/3*2
 
                 fontSizeMode: Text.Fit
                 minimumPixelSize: 10
                 font.pixelSize: 72
+
+                anchors{
+                    verticalCenter: parent.verticalCenter
+                }
 
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
