@@ -19,8 +19,7 @@ include(deployment.pri)
 HEADERS += \
     src/api/instagram.h \
     src/api/instagramrequest.h \
-    src/cripto/hmacsha.h \
-    src/cripto/hmac.h
+    src/cripto/hmacsha.h
 
 DISTFILES += \
     img/prosto_back.jpg \
