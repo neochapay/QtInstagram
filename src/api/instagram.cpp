@@ -12,6 +12,7 @@
 #include <QUuid>
 #include <QJsonObject>
 #include <QJsonDocument>
+#include <QJsonArray>
 
 #include <QDataStream>
 
@@ -176,9 +177,15 @@ void Instagram::syncFeatures()
 }
 
 //FIXME: uploadImage is not public yeat. Give me few weeks to optimize code
-void Instagram::postImage(QFile image)
+void Instagram::postImage(QFile image, QString caption, QString upload_id)
 {
+    QByteArray dataStrem = image.readAll();
+    QString boundary = this->m_uuid;
 
+    if(upload_id.length() == 0)
+    {
+        upload_id = QDateTime::currentMSecsSinceEpoch();
+    }
 }
 
 //FIXME: uploadImage is not public yeat. Give me few weeks to optimize code

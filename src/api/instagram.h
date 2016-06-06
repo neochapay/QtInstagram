@@ -22,7 +22,7 @@ public:
 
     QString getUsernameId(){return this->m_username_id;}
 
-    void postImage(QFile image);
+    void postImage(QFile image, QString caption, QString upload_id);
     void postVideo(QFile video);
 
     void editMedia(QString mediaId, QString captionText = "");
