@@ -101,6 +101,32 @@ ImagedPage{
                     right: parent.right
                 }
             }
+
+            MouseArea{
+                anchors.fill: parent
+                onClicked: {
+                    if(loginArea.text && passwordArea.text)
+                    {
+                        instagram.setUsername(loginArea.text);
+                        instagram.setPassword(passwordArea.text);
+                        instagram.login();
+                    }
+                }
+            }
+        }
+    }
+
+    Connections{
+        target: instagram
+        onProfileConnected:{
+            loader.source = "FeedPage.qml"
+        }
+    }
+
+    Connections{
+        target: instagram
+        onProfileConnectedFail:{
+            failText.text = qsTr("Login failed")
         }
     }
 }

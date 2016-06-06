@@ -9,11 +9,9 @@ class Instagram : public QObject
 {
     Q_OBJECT
 public:
-    explicit Instagram(QString username = "",
-                       QString password = "",
-                       bool debug = false,
-                       QObject *parent = 0);
+    explicit Instagram(QObject *parent = 0);
 
+public slots:
     void login(bool forse = false);
     void logout();
 
@@ -22,8 +20,8 @@ public:
 
     QString getUsernameId(){return this->m_username_id;}
 
-    void postImage(QFile image, QString caption, QString upload_id);
-    void postVideo(QFile video);
+    void postImage(QFile *image, QString caption, QString upload_id);
+    void postVideo(QFile *video);
 
     void editMedia(QString mediaId, QString captionText = "");
     void deleteMedia(QString mediaId);
@@ -34,7 +32,7 @@ public:
 
     void setPrivateAccount();
     void setPublicAccount();
-    void changeProfilePicture(QFile photo);
+    void changeProfilePicture(QFile *photo);
     void removeProfilePicture();
     void getProfileData();
     void editProfile(QString url, QString phone, QString first_name, QString biography, QString email, bool gender);
@@ -81,9 +79,11 @@ private:
     bool m_isLoggedIn = false;
 
     QString generateDeviceId();
-    void setUser();
 
 signals:
+    void profileConnected(QVariant answer);
+    void profileConnectedFail();
+
     void mediaEdited(QVariant answer);
     void mediaDeleted(QVariant answer);
 
@@ -124,9 +124,9 @@ signals:
     void createAccountDataReady(QVariant answer);
 
     void error(QString message);
-public slots:
 
 private slots:
+    void setUser();
     void doLogin();
     void syncFeatures();
     void profileConnect(QVariant profile);

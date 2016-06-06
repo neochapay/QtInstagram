@@ -7,9 +7,10 @@ Rectangle{
 
     property string placeholder
     property var echo: TextInput.Normal
+    property string text
 
     TextField{
-        id: loginInput
+        id: inputArea
         width: parent.width
         height: parent.height
 
@@ -22,6 +23,10 @@ Rectangle{
 
         style: TextFieldStyle{
             background: Rectangle{}
+        }
+
+        onTextChanged:{
+            simpleTextFeed.text = inputArea.text
         }
     }
 }

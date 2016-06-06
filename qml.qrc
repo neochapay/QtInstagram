@@ -13,5 +13,6 @@
         <file>qml/components/SimpleTextFeed.qml</file>
         <file>qml/components/ImagedPage.qml</file>
         <file>qml/pages/ReginstrationPage.qml</file>
+        <file>qml/pages/FeedPage.qml</file>
     </qresource>
 </RCC>

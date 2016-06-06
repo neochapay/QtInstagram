@@ -18,20 +18,9 @@
 
 #include <QDebug>
 
-Instagram::Instagram(QString username, QString password, bool debug, QObject *parent)
+Instagram::Instagram(QObject *parent)
     : QObject(parent)
 {
-    this->m_debug = debug;
-    if(username.length() > 0 and password.length() > 0)
-    {
-        this->m_username = username;
-        this->m_password = password;
-    }
-    else
-    {
-        emit error("Username anr/or password is clean");
-    }
-
     this->m_data_path =  QDir(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
 
     if(!m_data_path.exists())
@@ -68,16 +57,23 @@ QString Instagram::generateDeviceId()
 
 void Instagram::setUser()
 {
-    QFile f_cookie(m_data_path.absolutePath()+"/cookies.dat");
-    QFile f_userId(m_data_path.absolutePath()+"/userId.dat");
-    QFile f_token(m_data_path.absolutePath()+"/token.dat");
-
-    if(f_cookie.exists() && f_userId.exists() && f_token.exists())
+    if(this->m_username.length() == 0 or this->m_password.length() == 0)
     {
-        this->m_isLoggedIn = true;
-        this->m_username_id = f_userId.readAll().trimmed();
-        this->m_rank_token = this->m_username_id+"_"+this->m_uuid;
-        this->m_token = f_token.readAll().trimmed();
+        emit error("Username anr/or password is clean");
+    }
+    else
+    {
+        QFile f_cookie(m_data_path.absolutePath()+"/cookies.dat");
+        QFile f_userId(m_data_path.absolutePath()+"/userId.dat");
+        QFile f_token(m_data_path.absolutePath()+"/token.dat");
+
+        if(f_cookie.exists() && f_userId.exists() && f_token.exists())
+        {
+            this->m_isLoggedIn = true;
+            this->m_username_id = f_userId.readAll().trimmed();
+            this->m_rank_token = this->m_username_id+"_"+this->m_uuid;
+            this->m_token = f_token.readAll().trimmed();
+        }
     }
 }
 
@@ -86,9 +82,10 @@ void Instagram::login(bool forse)
 {
     if(!this->m_isLoggedIn or forse)
     {
-         InstagramRequest *loginRequest = new InstagramRequest();
-         loginRequest->request("si/fetch_headers/?challenge_type=signup&guid="+this->m_uuid,NULL);
-         QObject::connect(loginRequest,SIGNAL(replySrtingReady(QVariant)),this,SLOT(doLogin()));
+        this->setUser();
+        InstagramRequest *loginRequest = new InstagramRequest();
+        loginRequest->request("si/fetch_headers/?challenge_type=signup&guid="+this->m_uuid,NULL);
+        QObject::connect(loginRequest,SIGNAL(replySrtingReady(QVariant)),this,SLOT(doLogin()));
     }
 }
 
@@ -147,15 +144,21 @@ void Instagram::profileConnect(QVariant profile)
     if(profile_obj["status"] == "fail")
     {
         emit error(profile_obj["message"].toString().toUtf8());
+        emit profileConnectedFail();
     }
+    else
+    {
 
-    QJsonObject user = profile_obj["logged_in_user"].toObject();
+        QJsonObject user = profile_obj["logged_in_user"].toObject();
 
-    this->m_isLoggedIn = true;
-    this->m_username_id = QString::number(user["pk"].toDouble(),'g', 10);
-    this->m_rank_token = this->m_username_id+"_"+this->m_uuid;
+        this->m_isLoggedIn = true;
+        this->m_username_id = QString::number(user["pk"].toDouble(),'g', 10);
+        this->m_rank_token = this->m_username_id+"_"+this->m_uuid;
 
-    this->syncFeatures();
+        this->syncFeatures();
+
+        emit profileConnected(profile);
+    }
 }
 
 
@@ -177,9 +180,9 @@ void Instagram::syncFeatures()
 }
 
 //FIXME: uploadImage is not public yeat. Give me few weeks to optimize code
-void Instagram::postImage(QFile image, QString caption, QString upload_id)
+void Instagram::postImage(QFile *image, QString caption, QString upload_id)
 {
-    QByteArray dataStrem = image.readAll();
+    QByteArray dataStrem = image->readAll();
     QString boundary = this->m_uuid;
 
     if(upload_id.length() == 0)
@@ -189,7 +192,7 @@ void Instagram::postImage(QFile image, QString caption, QString upload_id)
 }
 
 //FIXME: uploadImage is not public yeat. Give me few weeks to optimize code
-void Instagram::postVideo(QFile video)
+void Instagram::postVideo(QFile *video)
 {
 
 }
@@ -274,7 +277,7 @@ void Instagram::deleteComment(QString mediaId, QString commentId, QString captio
 }
 
 //FIXME changeProfilePicture is not public yeat. Give me few weeks to optimize code
-void Instagram::changeProfilePicture(QFile photo)
+void Instagram::changeProfilePicture(QFile *photo)
 {
 
 }
