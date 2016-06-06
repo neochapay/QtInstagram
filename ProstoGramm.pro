@@ -20,3 +20,7 @@ HEADERS += \
     src/api/instagram.h \
     src/api/instagramrequest.h \
     src/cripto/hmacsha.h
+
+DISTFILES += \
+    img/prosto_back.jpg \
+    img/name1024.png
