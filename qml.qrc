@@ -10,5 +10,6 @@
         <file>qml/main.qml</file>
         <file>qml/pages/FrontPage.qml</file>
         <file>qml/pages/LoginPage.qml</file>
+        <file>qml/components/SimpleTextFeed.qml</file>
     </qresource>
 </RCC>

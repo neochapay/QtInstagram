@@ -2,6 +2,8 @@ import QtQuick 2.5
 import QtQuick.Controls 1.5
 import QtQuick.Controls.Styles 1.4
 
+import "../components/"
+
 Rectangle{
     id: loginPage
     Image{
@@ -49,61 +51,32 @@ Rectangle{
             leftMargin: 0.125*parent.width
         }
 
-        Rectangle{
+        SimpleTextFeed{
             id: loginArea
             width: parent.width-10
             height: loginButton.height
+
+            placeholder: qsTr("Login")
 
             anchors{
                 top: parent.top
                 left: parent.left
                 leftMargin: 5
             }
-
-            TextField{
-                id: loginInput
-                width: parent.width
-                height: parent.height
-
-                placeholderText: qsTr("Login")
-
-                anchors{
-                    verticalCenter: parent.verticalCenter
-                }
-
-                style: TextFieldStyle{
-                    background: Rectangle{}
-                }
-            }
         }
 
-        Rectangle{
+        SimpleTextFeed{
             id: passwordArea
             width: parent.width-10
             height: loginButton.height
+
+            placeholder: qsTr("Password")
+            echo: TextInput.Password
 
             anchors{
                 top: loginArea.bottom
                 left: parent.left
                 leftMargin: 5
-            }
-
-            TextField{
-                id: passwordInput
-                width: parent.width
-                height: parent.height
-
-                placeholderText: qsTr("Password")
-
-                anchors{
-                    verticalCenter: parent.verticalCenter
-                }
-
-                echoMode: TextInput.Password
-
-                style: TextFieldStyle{
-                    background: Rectangle{}
-                }
             }
         }
 

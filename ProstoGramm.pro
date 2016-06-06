@@ -19,11 +19,13 @@ include(deployment.pri)
 HEADERS += \
     src/api/instagram.h \
     src/api/instagramrequest.h \
-    src/cripto/hmacsha.h
+    src/cripto/hmacsha.h \
+    src/cripto/hmac.h
 
 DISTFILES += \
     img/prosto_back.jpg \
     img/name1024.png \
     qml/pages/FrontPage.qml \
     qml/main.qml \
-    qml/pages/LoginPage.qml
+    qml/pages/LoginPage.qml \
+    qml/components/SimpleTextFeed.qml
