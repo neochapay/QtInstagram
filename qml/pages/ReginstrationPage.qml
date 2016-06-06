@@ -1,18 +1,19 @@
-import QtQuick 2.4
+import QtQuick 2.5
+import QtQuick.Controls 1.5
+import QtQuick.Controls.Styles 1.4
 
 import "../components/"
 
 ImagedPage{
-    id: frontPage
 
     Rectangle{
         id: entherAction
-        color: "#5caa15"
+        color: "white"
         clip: true
         radius: 5
 
         width: parent.width-0.25*parent.width
-        height: 0.20*parent.height
+        height: 0.5*parent.height
 
         anchors{
             bottom: parent.bottom
@@ -21,54 +22,74 @@ ImagedPage{
             leftMargin: 0.125*parent.width
         }
 
-        Rectangle{
-            id: loginButton
-            width: parent.width
-            height: parent.height/2
+        SimpleTextFeed{
+            id: loginArea
+            width: parent.width-10
+            height: loginButton.height
 
-            color: "transparent"
+            placeholder: qsTr("Login")
 
             anchors{
                 top: parent.top
                 left: parent.left
+                leftMargin: 5
             }
+        }
 
-            Text{
-                text: qsTr("Login")
-                color: "white"
-                width: parent.width
-                height: parent.height/3*2
+        SimpleTextFeed{
+            id: emailArea
+            width: parent.width-10
+            height: loginButton.height
 
-                anchors{
-                    verticalCenter: parent.verticalCenter
-                }
+            placeholder: qsTr("E-mail")
 
-                fontSizeMode: Text.Fit
-                minimumPixelSize: 10
-                font.pixelSize: 72
-
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
+            anchors{
+                top: loginArea.bottom
+                left: parent.left
+                leftMargin: 5
             }
+        }
 
-            MouseArea{
-                anchors.fill: parent
-                onClicked: {
-                    loader.source = "LoginPage.qml"
-                }
+        SimpleTextFeed{
+            id: passwordArea
+            width: parent.width-10
+            height: loginButton.height
+
+            placeholder: qsTr("Password")
+            echo: TextInput.Password
+
+            anchors{
+                top: emailArea.bottom
+                left: parent.left
+                leftMargin: 5
+            }
+        }
+
+        SimpleTextFeed{
+            id: passwordArea2
+            width: parent.width-10
+            height: loginButton.height
+
+            placeholder: qsTr("Confirm password")
+            echo: TextInput.Password
+
+            anchors{
+                top: passwordArea.bottom
+                left: parent.left
+                leftMargin: 5
             }
         }
 
         Rectangle{
-            id: regButton
+            id: loginButton
             width: parent.width
-            height: parent.height/2
+            height: parent.height/5
             radius: 5
 
             color: "#155caa"
 
             anchors{
-                top: loginButton.bottom
+                bottom: parent.bottom
                 left: parent.left
             }
 
@@ -88,13 +109,6 @@ ImagedPage{
 
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
-
-                MouseArea{
-                    anchors.fill: parent
-                    onClicked: {
-                        loader.source = "ReginstrationPage.qml"
-                    }
-                }
             }
 
             Rectangle{
