@@ -25,4 +25,5 @@ DISTFILES += \
     img/prosto_back.jpg \
     img/name1024.png \
     qml/pages/FrontPage.qml \
-    qml/main.qml
+    qml/main.qml \
+    qml/pages/LoginPage.qml

@@ -9,5 +9,6 @@
         <file>img/name1024.png</file>
         <file>qml/main.qml</file>
         <file>qml/pages/FrontPage.qml</file>
+        <file>qml/pages/LoginPage.qml</file>
     </qresource>
 </RCC>

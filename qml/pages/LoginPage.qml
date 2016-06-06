@@ -1,8 +1,9 @@
-import QtQuick 2.4
+import QtQuick 2.5
+import QtQuick.Controls 1.5
+import QtQuick.Controls.Styles 1.4
 
 Rectangle{
-    id: frontPage
-
+    id: loginPage
     Image{
         id: backImage
         width: parent.width
@@ -34,12 +35,12 @@ Rectangle{
 
     Rectangle{
         id: entherAction
-        color: "#5caa15"
+        color: "white"
         clip: true
         radius: 5
 
         width: parent.width-0.25*parent.width
-        height: 0.20*parent.height
+        height: 0.30*parent.height
 
         anchors{
             top: logoText.bottom
@@ -49,58 +50,78 @@ Rectangle{
         }
 
         Rectangle{
-            id: loginButton
-            width: parent.width
-            height: parent.height/2
-
-            color: "transparent"
+            id: loginArea
+            width: parent.width-10
+            height: loginButton.height
 
             anchors{
                 top: parent.top
                 left: parent.left
+                leftMargin: 5
             }
 
-            Text{
-                text: qsTr("Login")
-                color: "white"
+            TextField{
+                id: loginInput
                 width: parent.width
-                height: parent.height/3*2
+                height: parent.height
+
+                placeholderText: qsTr("Login")
 
                 anchors{
                     verticalCenter: parent.verticalCenter
                 }
 
-                fontSizeMode: Text.Fit
-                minimumPixelSize: 10
-                font.pixelSize: 72
-
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-            }
-
-            MouseArea{
-                anchors.fill: parent
-                onClicked: {
-                    loader.source = "LoginPage.qml"
+                style: TextFieldStyle{
+                    background: Rectangle{}
                 }
             }
         }
 
         Rectangle{
-            id: regButton
-            width: parent.width
-            height: parent.height/2
-            radius: 5
-
-            color: "#155caa"
+            id: passwordArea
+            width: parent.width-10
+            height: loginButton.height
 
             anchors{
-                top: loginButton.bottom
+                top: loginArea.bottom
+                left: parent.left
+                leftMargin: 5
+            }
+
+            TextField{
+                id: passwordInput
+                width: parent.width
+                height: parent.height
+
+                placeholderText: qsTr("Password")
+
+                anchors{
+                    verticalCenter: parent.verticalCenter
+                }
+
+                echoMode: TextInput.Password
+
+                style: TextFieldStyle{
+                    background: Rectangle{}
+                }
+            }
+        }
+
+        Rectangle{
+            id: loginButton
+            width: parent.width
+            height: parent.height/3
+            radius: 5
+
+            color: "#5caa15"
+
+            anchors{
+                bottom: parent.bottom
                 left: parent.left
             }
 
             Text{
-                text: qsTr("Registration")
+                text: qsTr("Login")
                 color: "white"
                 width: parent.width
                 height: parent.height/3*2
