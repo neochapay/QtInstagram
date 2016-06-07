@@ -107,6 +107,22 @@ Rectangle {
             top: infoLine.bottom
             left: parent.left
         }
+
+        MouseArea{
+            anchors.fill: parent
+            onClicked: {
+                timeLineView.currentIndex = index;
+
+                if(has_liked)
+                {
+                    instagram.unLike(id)
+                }
+                else
+                {
+                    instagram.like(id)
+                }
+            }
+        }
     }
 
     Rectangle{
