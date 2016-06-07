@@ -17,5 +17,6 @@
         <file>qml/components/TimeLineItem.qml</file>
         <file>qml/components/TimeLineToolbar.qml</file>
         <file>qml/fonts/fontawesome-webfont.ttf</file>
+        <file>qml/js/FontAwesome.js</file>
     </qresource>
 </RCC>
