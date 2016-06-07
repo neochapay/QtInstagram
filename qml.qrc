@@ -16,5 +16,6 @@
         <file>qml/pages/FeedPage.qml</file>
         <file>qml/components/TimeLineItem.qml</file>
         <file>qml/components/TimeLineToolbar.qml</file>
+        <file>qml/fonts/fontawesome-webfont.ttf</file>
     </qresource>
 </RCC>

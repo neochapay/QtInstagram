@@ -23,6 +23,10 @@ Window {
        property string password
     }
 
+    FontLoader{
+            source: "fonts/fontawesome-webfont.ttf"
+    }
+
     Rectangle{
         property string text
 

@@ -29,4 +29,6 @@ DISTFILES += \
     qml/pages/LoginPage.qml \
     qml/components/SimpleTextFeed.qml \
     qml/components/ImagedPage.qml \
-    qml/components/timeLineItem.qml
+    qml/components/timeLineItem.qml \
+    qml/js/FontAwesome.js \
+    qml/fonts/fontawesome-webfont.ttf
