@@ -8,23 +8,114 @@ Rectangle {
     height: childrenRect.height+18
     width: parent.width
 
+    Component.onCompleted: {
+        var date = new Date(taken_at*1000);
+        var months = [qsTr('Jan'),
+                      qsTr('Feb'),
+                      qsTr('Mar'),
+                      qsTr('Apr'),
+                      qsTr('May'),
+                      qsTr('Jun'),
+                      qsTr('Jul'),
+                      qsTr('Aug'),
+                      qsTr('Sep'),
+                      qsTr('Oct'),
+                      qsTr('Nov'),
+                      qsTr('Dec')];
+        var hours;
+        var minutes;
+        if(date.getHours() < 10)
+        {
+            hours = "0"+date.getHours();
+        }
+        else
+        {
+            hours = date.getHours();
+        }
+        if(date.getMinutes() < 10)
+        {
+            minutes = "0"+date.getMinutes();
+        }
+        else
+        {
+            minutes = date.getMinutes();
+        }
+
+        itemTime.text = date.getDate()+" "+months[date.getMonth()]+" "+hours+":"+minutes
+    }
+
+    Rectangle{
+        id: infoLine
+        height: 28
+        width: parent.width
+
+        Image{
+            id: profilePic
+            height: 20
+            width: 20
+            source: user.profile_pic_url
+
+            anchors{
+                left: parent.left
+                leftMargin: 4
+                top: parent.top
+                topMargin: 4
+            }
+        }
+
+        Text {
+            id: nickName
+            text: user.username
+
+            height: 20
+
+            anchors{
+                left: profilePic.right
+                leftMargin: 4
+                top: parent.top
+                topMargin: 4
+            }
+
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignHCenter
+
+            color: "#5caa15"
+        }
+
+        Text{
+            id: itemTime
+            height: 20
+
+            anchors{
+                right: parent.right
+                rightMargin: 4
+                top: parent.top
+                topMargin: 4
+            }
+
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignHCenter
+        }
+    }
+
     Image{
         id: itemImage
         width: parent.width
         height: (parent.width)/image_versions2.candidates[0].width*image_versions2.candidates[0].height
         source: image_versions2.candidates[0].url
         anchors{
-            top: parent.top
-            topMargin: 9
+            top: infoLine.bottom
             left: parent.left
         }
     }
 
     Rectangle{
+        id: commentsLikes
         height: childrenRect.height
-        width: parent.width-18
+        width: parent.width
         anchors{
             top: itemImage.bottom
+            topMargin: 4
             left: parent.left
         }
 
