@@ -119,7 +119,11 @@ ImagedPage{
     Connections{
         target: instagram
         onProfileConnected:{
+            main.profile = JSON.parse(answer)
             loader.source = "FeedPage.qml"
+
+            settings.username = loginArea.text
+            settings.password = passwordArea.text
         }
     }
 
@@ -127,6 +131,21 @@ ImagedPage{
         target: instagram
         onProfileConnectedFail:{
             failText.text = qsTr("Login failed")
+
+            loginArea.text = "";
+            passwordArea.text = "";
+        }
+    }
+
+    Component.onCompleted: {
+        if(settings.username && settings.password)
+        {
+            loginArea.text = settings.username;
+            passwordArea.text = settings.password;
+
+            instagram.setUsername(loginArea.text);
+            instagram.setPassword(passwordArea.text);
+            instagram.login();
         }
     }
 }

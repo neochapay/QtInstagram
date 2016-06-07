@@ -1,6 +1,8 @@
 import QtQuick 2.4
 import QtQuick.Window 2.2
 
+import Qt.labs.settings 1.0
+
 import instagram 1.0
 
 import "pages"
@@ -9,8 +11,16 @@ Window {
     id: main
     visible: true
 
+    property var profile;
+
     Instagram{
         id: instagram
+    }
+
+    Settings{
+       id: settings
+       property string username
+       property string password
     }
 
     Rectangle{
@@ -61,7 +71,14 @@ Window {
     }
 
     Component.onCompleted: {
-        loader.source = "pages/FrontPage.qml"
+        if(settings.username && settings.password)
+        {
+            loader.source = "pages/LoginPage.qml"
+        }
+        else
+        {
+            loader.source = "pages/FrontPage.qml"
+        }
     }
 
     Connections{

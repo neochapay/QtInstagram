@@ -28,4 +28,5 @@ DISTFILES += \
     qml/main.qml \
     qml/pages/LoginPage.qml \
     qml/components/SimpleTextFeed.qml \
-    qml/components/ImagedPage.qml
+    qml/components/ImagedPage.qml \
+    qml/components/timeLineItem.qml
