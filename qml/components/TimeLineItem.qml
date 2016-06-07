@@ -183,13 +183,57 @@ Rectangle {
     }
 
     Rectangle{
+        id: commentLine
+        width: parent.width-8
+        height: childrenRect.height+4
+
+        anchors{
+            left: parent.left
+            leftMargin: 4
+            top: commentsLikes.bottom
+            topMargin: 4
+        }
+
+        ListView{
+            id: commentView
+            width: parent.width
+            height: childrenRect.height
+            model: comments
+
+            delegate: Rectangle{
+                width: parent.width
+                height: childrenRect.height
+
+                Component.onCompleted: {
+                    commentText.text = '<b>'+user.username+"</b> : "+text
+                }
+
+                Text{
+                    id: commentText
+                }
+            }
+        }
+
+        Text{
+            id: andMoreComments
+            visible: (comment_count > commentView.count) ? true : false
+            text: "More comments..."
+
+            anchors{
+                top: commentView.bottom
+                left: commentView.left
+            }
+        }
+    }
+
+    Rectangle{
         id: doCommentLine
         height: 28
         width: parent.width
 
         anchors{
             left: parent.left
-            top: commentsLikes.bottom
+            top: commentLine.bottom
         }
 
         SimpleTextFeed{
@@ -266,7 +310,7 @@ Rectangle {
         onCommentPosted:{
             commentArea.setText("");
             var comment = JSON.parse(answer)
-            comments.append(comment)
+            comments.append(comment.comment)
         }
     }
 }
