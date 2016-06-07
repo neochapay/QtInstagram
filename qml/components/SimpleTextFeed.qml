@@ -9,6 +9,12 @@ Rectangle{
     property var echo: TextInput.Normal
     property string text
 
+    function setText(string)
+    {
+        text = string;
+        inputArea.text = string;
+    }
+
     TextField{
         id: inputArea
         width: parent.width
