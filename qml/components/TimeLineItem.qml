@@ -182,6 +182,63 @@ Rectangle {
         }
     }
 
+    Rectangle{
+        id: doCommentLine
+        height: 28
+        width: parent.width
+
+        anchors{
+            left: parent.left
+            top: commentsLikes.bottom
+        }
+
+        SimpleTextFeed{
+            id: commentArea
+            width: parent.width-sendCommentIcon.width-8
+            height: parent.height-8
+
+            placeholder: qsTr("Add comment")
+
+            anchors{
+                top: parent.top
+                topMargin: 4
+                left: parent.left
+                leftMargin: 4
+            }
+        }
+
+        Text{
+            id: sendCommentIcon
+            width: 20
+            height: 20
+            anchors{
+                right: parent.right
+                rightMargin: 4
+                top: parent.top
+                topMargin: 4
+            }
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignHCenter
+
+            text: FontAwesome.Icon.comment_o
+            color: "#5caa15"
+            font{
+                family: "FontAwesome"
+                pixelSize: 18
+            }
+
+            MouseArea{
+                anchors.fill: parent
+                onClicked: {
+                    if(commentArea.text.length > 0)
+                    {
+                        instagram.postComment(id,commentArea.text)
+                    }
+                }
+            }
+        }
+    }
+
     Connections{
         target: instagram
         onLikeDataReady:{
@@ -201,6 +258,15 @@ Rectangle {
             {
                 timeLineView.model.get(timeLineView.currentIndex).has_liked =  false
             }
+        }
+    }
+
+    Connections{
+        target: instagram
+        onCommentPosted:{
+            commentArea.setText("");
+            var comment = JSON.parse(answer)
+            comments.append(comment)
         }
     }
 }
