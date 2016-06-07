@@ -26,8 +26,4 @@ Rectangle {
             leftMargin: 9
         }
     }
-
-    Component.onCompleted: {
-        console.log((parent.width-18)/image_versions2.candidates[0].width*image_versions2.candidates[0].height)
-    }
 }
