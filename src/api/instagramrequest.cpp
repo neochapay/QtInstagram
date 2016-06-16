@@ -27,6 +27,38 @@ InstagramRequest::InstagramRequest(QObject *parent) : QObject(parent)
 
 }
 
+void InstagramRequest::fileRquest(QString endpoint, QString boundary, QString data)
+{
+    QFile f(m_data_path.absolutePath()+"/cookies.dat");
+    f.open(QIODevice::ReadOnly);
+    QDataStream s(&f);
+
+    QUrl url(API_URL+endpoint);
+    QNetworkRequest request(url);
+
+    while(!s.atEnd()){
+        QByteArray c;
+        s >> c;
+        QList<QNetworkCookie> list = QNetworkCookie::parseCookies(c);
+        if(list.count() > 0)
+        {
+            this->m_jar->insertCookie(list.at(0));
+        }
+    }
+
+    request.setRawHeader("Connection","close");
+    request.setRawHeader("Accept","*/*");
+    request.setRawHeader("Content-type",QString("multipart/form-data; boundary="+boundary).toUtf8());
+    request.setRawHeader("Content-Length",QString(data.length()).toUtf8());
+    request.setRawHeader("Cookie2","$Version=1");
+    request.setRawHeader("Accept-Language","en-US");
+    request.setRawHeader("Accept-Encoding","gzip");
+    request.setRawHeader("User-Agent",USER_AGENT.toUtf8());
+
+    this->m_manager->setCookieJar(this->m_jar);
+    this->m_reply = this->m_manager->post(request,data.toUtf8());
+}
+
 void InstagramRequest::request(QString endpoint, QByteArray post)
 {
     QFile f(m_data_path.absolutePath()+"/cookies.dat");
@@ -97,3 +129,4 @@ QString InstagramRequest::generateSignature(QJsonObject data)
 
     return QString("ig_sig_key_version="+SIG_KEY_VERSION+"&signed_body="+hash.toHex()+"."+data_string.toUtf8());
 }
+

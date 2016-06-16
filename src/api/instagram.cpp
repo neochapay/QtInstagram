@@ -188,13 +188,40 @@ void Instagram::syncFeatures()
 //FIXME: uploadImage is not public yeat. Give me few weeks to optimize code
 void Instagram::postImage(QFile *image, QString caption, QString upload_id)
 {
-    QByteArray dataStrem = image->readAll();
+    QByteArray dataStream = image->readAll();
+
+    QFileInfo info(image->fileName());
+    QString ext = info.completeSuffix();
+
     QString boundary = this->m_uuid;
 
     if(upload_id.length() == 0)
     {
         upload_id = QDateTime::currentMSecsSinceEpoch();
     }
+/*Body build*/
+    QString body = "";
+    body += "--"+this->m_uuid+"--\r\n";
+
+    body += "Content-Disposition: form-data; name=upload_id;";
+    body += "\r\n\r\n"+upload_id+"\r\n";
+
+    body += "Content-Disposition: form-data; name=_uuid;";
+    body += "\r\n\r\n"+this->m_uuid+"\r\n";
+
+    body += "Content-Disposition: form-data; name=_csrftoken;";
+    body += "\r\n\r\n"+this->m_token+"\r\n";
+
+    body += "Content-Disposition: form-data; name=photo; filename=pending_media_"+upload_id+"."+ext+";";
+    body += "\r\n\r\n"+dataStream+"\r\n";
+
+    body += "Content-Disposition: form-data; name=image_compression;";
+    body += "\r\n\r\n{\"lib_name\":\"jt\",\"lib_version\":\"1.3.0\",\"quality\":\"70\"}\r\n";
+
+    body += "--"+this->m_uuid+"--\r\n";
+
+    InstagramRequest *putPhotoReqest = new InstagramRequest();
+    putPhotoReqest->fileRquest("upload/photo/",boundary, body);
 }
 
 //FIXME: uploadImage is not public yeat. Give me few weeks to optimize code

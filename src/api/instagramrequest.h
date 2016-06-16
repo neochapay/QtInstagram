@@ -12,7 +12,9 @@ public:
     explicit InstagramRequest(QObject *parent = 0);
 
     void request(QString endpoint, QByteArray post);
+    void fileRquest(QString endpoint, QString boundary, QString data);
     QString generateSignature(QJsonObject data);
+    QString buildBody(QList<QList<QString> > bodies, QString boundary);
 
 private:
     QString API_URL = "https://i.instagram.com/api/v1/";
