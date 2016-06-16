@@ -27,13 +27,14 @@ InstagramRequest::InstagramRequest(QObject *parent) : QObject(parent)
 
 }
 
-void InstagramRequest::fileRquest(QString endpoint, QString boundary, QString data)
+void InstagramRequest::fileRquest(QString endpoint, QString boundary, QByteArray data)
 {
     QFile f(m_data_path.absolutePath()+"/cookies.dat");
     f.open(QIODevice::ReadOnly);
     QDataStream s(&f);
 
-    QUrl url(API_URL+endpoint);
+    //QUrl url(API_URL+endpoint);
+    QUrl url("http://muzakkord.ru/test/");
     QNetworkRequest request(url);
 
     while(!s.atEnd()){
@@ -48,15 +49,19 @@ void InstagramRequest::fileRquest(QString endpoint, QString boundary, QString da
 
     request.setRawHeader("Connection","close");
     request.setRawHeader("Accept","*/*");
-    request.setRawHeader("Content-type",QString("multipart/form-data; boundary="+boundary).toUtf8());
-    request.setRawHeader("Content-Length",QString(data.length()).toUtf8());
+    request.setHeader(QNetworkRequest::ContentTypeHeader,"multipart/form-data; boundary="+boundary.toUtf8());
+    request.setHeader(QNetworkRequest::ContentLengthHeader,data.size());
+    request.setHeader(QNetworkRequest::UserAgentHeader,USER_AGENT);
+
     request.setRawHeader("Cookie2","$Version=1");
     request.setRawHeader("Accept-Language","en-US");
     request.setRawHeader("Accept-Encoding","gzip");
-    request.setRawHeader("User-Agent",USER_AGENT.toUtf8());
 
     this->m_manager->setCookieJar(this->m_jar);
-    this->m_reply = this->m_manager->post(request,data.toUtf8());
+    this->m_reply = this->m_manager->post(request,data);
+
+    QObject::connect(this->m_reply, SIGNAL(finished()), this, SLOT(finishPutFile()));
+    QObject::connect(this->m_manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(saveCookie()));
 }
 
 void InstagramRequest::request(QString endpoint, QByteArray post)
@@ -100,6 +105,17 @@ void InstagramRequest::finishGetUrl()
     {
         //qDebug() << answer;
         emit replySrtingReady(answer);
+    }
+}
+
+void InstagramRequest::finishPutFile()
+{
+    this->m_reply->deleteLater();
+    QVariant answer = QString::fromUtf8(this->m_reply->readAll());
+    if(answer.toString().length() > 1)
+    {
+        qDebug() << answer;
+        emit replyFileSrtingReady(answer);
     }
 }
 

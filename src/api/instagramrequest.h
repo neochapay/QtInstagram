@@ -12,7 +12,7 @@ public:
     explicit InstagramRequest(QObject *parent = 0);
 
     void request(QString endpoint, QByteArray post);
-    void fileRquest(QString endpoint, QString boundary, QString data);
+    void fileRquest(QString endpoint, QString boundary, QByteArray data);
     QString generateSignature(QJsonObject data);
     QString buildBody(QList<QList<QString> > bodies, QString boundary);
 
@@ -30,10 +30,12 @@ private:
 
 signals:
     void replySrtingReady(QVariant ans);
+    void replyFileSrtingReady(QVariant ans);
 
 public slots:
 private slots:
     void finishGetUrl();
+    void finishPutFile();
     void saveCookie();
 };
 

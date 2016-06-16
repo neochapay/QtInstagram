@@ -19,6 +19,13 @@ Rectangle {
             top: parent.top
             topMargin: 9
         }
+
+        MouseArea{
+            anchors.fill: parent
+            onClicked: {
+                instagram.postImage("/home/neochapay/1.jpg","tst");
+            }
+        }
     }
 
     Text{
