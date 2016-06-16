@@ -14,14 +14,14 @@
 
 InstagramRequest::InstagramRequest(QObject *parent) : QObject(parent)
 {
-    this->m_data_path =  QDir(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
+    this->m_data_path =  QDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
 
     this->m_manager = new QNetworkAccessManager();
     this->m_jar = new QNetworkCookieJar;
 
     if(!m_data_path.exists())
     {
-        m_data_path.mkpath(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
+        m_data_path.mkpath(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
     }
 
 

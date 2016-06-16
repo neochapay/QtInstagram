@@ -21,11 +21,11 @@
 Instagram::Instagram(QObject *parent)
     : QObject(parent)
 {
-    this->m_data_path =  QDir(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
+    this->m_data_path =  QDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
 
     if(!m_data_path.exists())
     {
-        m_data_path.mkpath(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
+        m_data_path.mkpath(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
     }
 
     QUuid uuid;
@@ -73,6 +73,8 @@ void Instagram::setUser()
             this->m_username_id = f_userId.readAll().trimmed();
             this->m_rank_token = this->m_username_id+"_"+this->m_uuid;
             this->m_token = f_token.readAll().trimmed();
+
+            this->doLogin();
         }
     }
 }
@@ -91,6 +93,14 @@ void Instagram::login(bool forse)
 
 void Instagram::logout()
 {
+    QFile f_cookie(m_data_path.absolutePath()+"/cookies.dat");
+    QFile f_userId(m_data_path.absolutePath()+"/userId.dat");
+    QFile f_token(m_data_path.absolutePath()+"/token.dat");
+
+    f_cookie.remove();
+    f_userId.remove();
+    f_token.remove();
+
     InstagramRequest *looutRequest = new InstagramRequest();
     looutRequest->request("accounts/logout/",NULL);
     QObject::connect(looutRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(doLogout(QVariant)));
@@ -120,16 +130,14 @@ void Instagram::doLogin()
     }
     QUuid uuid;
 
-    QJsonObject data
-    {
-        {"phone_id",     uuid.createUuid().toString()},
-        {"_csrftoken",   "Set-Cookie: csrftoken="+this->m_token},
-        {"username",     this->m_username},
-        {"guid",         this->m_uuid},
-        {"device_id",    this->m_device_id},
-        {"password",     this->m_password},
-        {"login_attempt_count", "0"}
-    };
+    QJsonObject data;
+        data.insert("phone_id",     uuid.createUuid().toString());
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
+        data.insert("username",     this->m_username);
+        data.insert("guid",         this->m_uuid);
+        data.insert("device_id",    this->m_device_id);
+        data.insert("password",     this->m_password);
+        data.insert("login_attempt_count", QString("0"));
 
     QString signature = request->generateSignature(data);
     request->request("accounts/login/",signature.toUtf8());
@@ -141,7 +149,7 @@ void Instagram::profileConnect(QVariant profile)
 {
     QJsonDocument profile_doc = QJsonDocument::fromJson(profile.toString().toUtf8());
     QJsonObject profile_obj = profile_doc.object();
-    if(profile_obj["status"] == "fail")
+    if(profile_obj["status"].toString().toUtf8() == "fail")
     {
         emit error(profile_obj["message"].toString().toUtf8());
         emit profileConnectedFail();
@@ -165,15 +173,13 @@ void Instagram::profileConnect(QVariant profile)
 void Instagram::syncFeatures()
 {
     InstagramRequest *syncRequest = new InstagramRequest();
-    QJsonObject data
-    {
-        {"_uuid",        this->m_uuid},
-        {"_csrftoken",   "Set-Cookie: csrftoken="+this->m_token},
-        {"_uid",         this->m_username_id},
-        {"id",           this->m_username_id},
-        {"password",     this->m_password},
-        {"experiments",  EXPERIMENTS}
-    };
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
+        data.insert("_uid",         this->m_username_id);
+        data.insert("id",           this->m_username_id);
+        data.insert("password",     this->m_password);
+        data.insert("experiments",  EXPERIMENTS);
 
     QString signature = syncRequest->generateSignature(data);
     syncRequest->request("qe/sync/",signature.toUtf8());
@@ -200,13 +206,11 @@ void Instagram::postVideo(QFile *video)
 void Instagram::editMedia(QString mediaId, QString captionText)
 {
     InstagramRequest *editMediaRequest = new InstagramRequest();
-    QJsonObject data
-    {
-        {"_uuid",        this->m_uuid},
-        {"_uid",         this->m_username_id},
-        {"_csrftoken",   "Set-Cookie: csrftoken="+this->m_token},
-        {"caption_text", captionText},
-    };
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_uid",         this->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
+        data.insert("caption_text", captionText);
 
     QString signature = editMediaRequest->generateSignature(data);
     editMediaRequest->request("media/"+mediaId+"/edit_media/",signature.toUtf8());
@@ -216,13 +220,11 @@ void Instagram::editMedia(QString mediaId, QString captionText)
 void Instagram::deleteMedia(QString mediaId)
 {
     InstagramRequest *deleteMediaRequest = new InstagramRequest();
-    QJsonObject data
-    {
-        {"_uuid",        this->m_uuid},
-        {"_uid",         this->m_username_id},
-        {"_csrftoken",   "Set-Cookie: csrftoken="+this->m_token},
-        {"media_id",    mediaId},
-    };
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_uid",         this->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
+        data.insert("media_id",    mediaId);
 
     QString signature = deleteMediaRequest->generateSignature(data);
     deleteMediaRequest->request("media/"+mediaId+"/delete/",signature.toUtf8());
@@ -232,12 +234,10 @@ void Instagram::deleteMedia(QString mediaId)
 void Instagram::removeSelftag(QString mediaId)
 {
     InstagramRequest *removeSelftagRequest = new InstagramRequest();
-    QJsonObject data
-    {
-        {"_uuid",        this->m_uuid},
-        {"_uid",         this->m_username_id},
-        {"_csrftoken",   "Set-Cookie: csrftoken="+this->m_token},
-    };
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_uid",         this->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
 
     QString signature = removeSelftagRequest->generateSignature(data);
     removeSelftagRequest->request("usertags/"+mediaId+"/remove/",signature.toUtf8());
@@ -247,13 +247,11 @@ void Instagram::removeSelftag(QString mediaId)
 void Instagram::postComment(QString mediaId, QString commentText)
 {
     InstagramRequest *postCommentRequest = new InstagramRequest();
-    QJsonObject data
-    {
-        {"_uuid",        this->m_uuid},
-        {"_uid",         this->m_username_id},
-        {"_csrftoken",   "Set-Cookie: csrftoken="+this->m_token},
-        {"comment_text", commentText}
-    };
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_uid",         this->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
+        data.insert("comment_text", commentText);
 
     QString signature = postCommentRequest->generateSignature(data);
     postCommentRequest->request("media/"+mediaId+"/comment/",signature.toUtf8());
@@ -263,13 +261,11 @@ void Instagram::postComment(QString mediaId, QString commentText)
 void Instagram::deleteComment(QString mediaId, QString commentId, QString captionText)
 {
     InstagramRequest *deleteCommentRequest = new InstagramRequest();
-    QJsonObject data
-    {
-        {"_uuid",        this->m_uuid},
-        {"_uid",         this->m_username_id},
-        {"_csrftoken",   "Set-Cookie: csrftoken="+this->m_token},
-        {"caption_text", captionText}
-    };
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_uid",         this->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
+        data.insert("caption_text", captionText);
 
     QString signature = deleteCommentRequest->generateSignature(data);
     deleteCommentRequest->request("media/"+mediaId+"/comment/"+commentId+"/delete/",signature.toUtf8());
@@ -285,12 +281,10 @@ void Instagram::changeProfilePicture(QFile *photo)
 void Instagram::removeProfilePicture()
 {
     InstagramRequest *removeProfilePictureRequest = new InstagramRequest();
-    QJsonObject data
-    {
-        {"_uuid",        this->m_uuid},
-        {"_uid",         this->m_username_id},
-        {"_csrftoken",   "Set-Cookie: csrftoken="+this->m_token},
-    };
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_uid",         this->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
 
     QString signature = removeProfilePictureRequest->generateSignature(data);
     removeProfilePictureRequest->request("maccounts/remove_profile_picture/",signature.toUtf8());
@@ -300,12 +294,10 @@ void Instagram::removeProfilePicture()
 void Instagram::setPrivateAccount()
 {
     InstagramRequest *setPrivateRequest = new InstagramRequest();
-    QJsonObject data
-    {
-        {"_uuid",        this->m_uuid},
-        {"_uid",         this->m_username_id},
-        {"_csrftoken",   "Set-Cookie: csrftoken="+this->m_token},
-    };
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_uid",         this->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
 
     QString signature = setPrivateRequest->generateSignature(data);
     setPrivateRequest->request("accounts/set_private/",signature.toUtf8());
@@ -315,12 +307,10 @@ void Instagram::setPrivateAccount()
 void Instagram::setPublicAccount()
 {
     InstagramRequest *setPublicRequest = new InstagramRequest();
-    QJsonObject data
-    {
-        {"_uuid",        this->m_uuid},
-        {"_uid",         this->m_username_id},
-        {"_csrftoken",   "Set-Cookie: csrftoken="+this->m_token},
-    };
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_uid",         this->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
 
     QString signature = setPublicRequest->generateSignature(data);
     setPublicRequest->request("accounts/set_public/",signature.toUtf8());
@@ -330,12 +320,10 @@ void Instagram::setPublicAccount()
 void Instagram::getProfileData()
 {
     InstagramRequest *getProfileRequest = new InstagramRequest();
-    QJsonObject data
-    {
-        {"_uuid",        this->m_uuid},
-        {"_uid",         this->m_username_id},
-        {"_csrftoken",   "Set-Cookie: csrftoken="+this->m_token},
-    };
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_uid",         this->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
 
     QString signature = getProfileRequest->generateSignature(data);
     getProfileRequest->request("accounts/current_user/?edit=true",signature.toUtf8());
@@ -368,19 +356,17 @@ void Instagram::editProfile(QString url, QString phone, QString first_name, QStr
         gen_string = "0";
     }
 
-    QJsonObject data
-    {
-        {"_uuid",        this->m_uuid},
-        {"_uid",         this->m_username_id},
-        {"_csrftoken",   "Set-Cookie: csrftoken="+this->m_token},
-        {"external_url", url},
-        {"phone_number", phone},
-        {"username",     this->m_username},
-        {"full_name",    first_name},
-        {"biography",    biography},
-        {"email",        email},
-        {"gender",       gen_string},
-    };
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_uid",         this->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
+        data.insert("external_url", url);
+        data.insert("phone_number", phone);
+        data.insert("username",     this->m_username);
+        data.insert("full_name",    first_name);
+        data.insert("biography",    biography);
+        data.insert("email",        email);
+        data.insert("gender",       gen_string);
 
     QString signature = editProfileRequest->generateSignature(data);
     editProfileRequest->request("accounts/edit_profile/",signature.toUtf8());
@@ -422,10 +408,17 @@ void Instagram::tagFeed(QString tag)
     QObject::connect(getTagFeedRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(tagFeedDataReady(QVariant)));
 }
 
-void Instagram::getTimeLine()
+void Instagram::getTimeLine(QString max_id)
 {
+    QString target ="feed/timeline/?rank_token="+this->m_rank_token+"&ranked_content=true&";
+
+    if(max_id.length() > 0)
+    {
+        target += "&max_id="+max_id;
+    }
+
     InstagramRequest *getTimeLineRequest = new InstagramRequest();
-    getTimeLineRequest->request("feed/timeline/?rank_token="+this->m_rank_token+"&ranked_content=true&",NULL);
+    getTimeLineRequest->request(target,NULL);
     QObject::connect(getTimeLineRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(timeLineDataReady(QVariant)));
 }
 
@@ -448,6 +441,14 @@ void Instagram::getUsernameFeed(QString usernameID, QString maxid, QString minTi
     QObject::connect(getUserTimeLineRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(userTimeLineDataReady(QVariant)));
 }
 
+void Instagram::getPopularFeed()
+{
+    InstagramRequest *getPopularFeedRequest = new InstagramRequest();
+    getPopularFeedRequest->request("feed/popular/?people_teaser_supported=1&rank_token="+this->m_rank_token+"&ranked_content=true&",NULL);
+    QObject::connect(getPopularFeedRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(popularFeedDataReady(QVariant)));
+
+}
+
 void Instagram::getMediaLikers(QString mediaId)
 {
     InstagramRequest *getMediaLikersRequest = new InstagramRequest();
@@ -458,13 +459,11 @@ void Instagram::getMediaLikers(QString mediaId)
 void Instagram::like(QString mediaId)
 {
     InstagramRequest *likeRequest = new InstagramRequest();
-    QJsonObject data
-    {
-        {"_uuid",        this->m_uuid},
-        {"_uid",         this->m_username_id},
-        {"_csrftoken",   "Set-Cookie: csrftoken="+this->m_token},
-        {"media_id",     mediaId},
-    };
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_uid",         this->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
+        data.insert("media_id",     mediaId);
 
     QString signature = likeRequest->generateSignature(data);
     likeRequest->request("media/"+mediaId+"/like/",signature.toUtf8());
@@ -474,13 +473,11 @@ void Instagram::like(QString mediaId)
 void Instagram::unLike(QString mediaId)
 {
     InstagramRequest *unLikeRequest = new InstagramRequest();
-    QJsonObject data
-    {
-        {"_uuid",        this->m_uuid},
-        {"_uid",         this->m_username_id},
-        {"_csrftoken",   "Set-Cookie: csrftoken="+this->m_token},
-        {"media_id",     mediaId},
-    };
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_uid",         this->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
+        data.insert("media_id",     mediaId);
 
     QString signature = unLikeRequest->generateSignature(data);
     unLikeRequest->request("media/"+mediaId+"/unlike/",signature.toUtf8());
@@ -497,13 +494,11 @@ void Instagram::getMediaComments(QString mediaId)
 void Instagram::follow(QString userId)
 {
     InstagramRequest *followRequest = new InstagramRequest();
-    QJsonObject data
-    {
-        {"_uuid",        this->m_uuid},
-        {"_uid",         this->m_username_id},
-        {"_csrftoken",   "Set-Cookie: csrftoken="+this->m_token},
-        {"user_id",     userId},
-    };
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_uid",         this->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
+        data.insert("user_id",     userId);
 
     QString signature = followRequest->generateSignature(data);
     followRequest->request("friendships/create/"+userId+"/",signature.toUtf8());
@@ -513,13 +508,11 @@ void Instagram::follow(QString userId)
 void Instagram::unFollow(QString userId)
 {
     InstagramRequest *unFollowRequest = new InstagramRequest();
-    QJsonObject data
-    {
-        {"_uuid",        this->m_uuid},
-        {"_uid",         this->m_username_id},
-        {"_csrftoken",   "Set-Cookie: csrftoken="+this->m_token},
-        {"user_id",     userId},
-    };
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_uid",         this->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
+        data.insert("user_id",     userId);
 
     QString signature = unFollowRequest->generateSignature(data);
     unFollowRequest->request("friendships/destroy/"+userId+"/",signature.toUtf8());
@@ -529,13 +522,11 @@ void Instagram::unFollow(QString userId)
 void Instagram::block(QString userId)
 {
     InstagramRequest *blockRequest = new InstagramRequest();
-    QJsonObject data
-    {
-        {"_uuid",        this->m_uuid},
-        {"_uid",         this->m_username_id},
-        {"_csrftoken",   "Set-Cookie: csrftoken="+this->m_token},
-        {"user_id",     userId},
-    };
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_uid",         this->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
+        data.insert("user_id",     userId);
 
     QString signature = blockRequest->generateSignature(data);
     blockRequest->request("friendships/block/"+userId+"/",signature.toUtf8());
@@ -545,13 +536,11 @@ void Instagram::block(QString userId)
 void Instagram::unBlock(QString userId)
 {
     InstagramRequest *unBlockRequest = new InstagramRequest();
-    QJsonObject data
-    {
-        {"_uuid",        this->m_uuid},
-        {"_uid",         this->m_username_id},
-        {"_csrftoken",   "Set-Cookie: csrftoken="+this->m_token},
-        {"user_id",     userId},
-    };
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_uid",         this->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
+        data.insert("user_id",     userId);
 
     QString signature = unBlockRequest->generateSignature(data);
     unBlockRequest->request("friendships/unblock/"+userId+"/",signature.toUtf8());
@@ -561,13 +550,11 @@ void Instagram::unBlock(QString userId)
 void Instagram::userFriendship(QString userId)
 {
     InstagramRequest *userFriendshipRequest = new InstagramRequest();
-    QJsonObject data
-    {
-        {"_uuid",        this->m_uuid},
-        {"_uid",         this->m_username_id},
-        {"_csrftoken",   "Set-Cookie: csrftoken="+this->m_token},
-        {"user_id",     userId},
-    };
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_uid",         this->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
+        data.insert("user_id",     userId);
 
     QString signature = userFriendshipRequest->generateSignature(data);
     userFriendshipRequest->request("friendships/show/"+userId+"/",signature.toUtf8());
@@ -593,12 +580,10 @@ void Instagram::getLikedMedia()
 void Instagram::checkUsername(QString username)
 {
     InstagramRequest *checkUsernameRequest = new InstagramRequest();
-    QJsonObject data
-    {
-        {"_uuid",        this->m_uuid},
-        {"_csrftoken",   "missing"},
-        {"username",     username},
-    };
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_csrftoken",   QString("missing"));
+        data.insert("username",     username);
 
     QString signature = checkUsernameRequest->generateSignature(data);
     checkUsernameRequest->request("users/check_username/",signature.toUtf8());
@@ -622,20 +607,26 @@ void Instagram::checkUsername(QString username)
 void Instagram::createAccount(QString username, QString password, QString email)
 {
     InstagramRequest *createAccountRequest = new InstagramRequest();
-    QJsonObject data
-    {
-        {"_uuid",               this->m_uuid},
-        {"_csrftoken",          "missing"},
-        {"username",            username},
-        {"first_name",          ""},
-        {"guid",                this->m_uuid},
-        {"device_id",           this->m_device_id},
-        {"email",               email},
-        {"force_sign_up_code",  ""},
-        {"qs_stamp",            ""},
-        {"password",            password},
-    };
+    QJsonObject data;
+        data.insert("_uuid",               this->m_uuid);
+        data.insert("_csrftoken",          QString("missing"));
+        data.insert("username",            username);
+        data.insert("first_name",          QString(""));
+        data.insert("guid",                this->m_uuid);
+        data.insert("device_id",           this->m_device_id);
+        data.insert("email",               email);
+        data.insert("force_sign_up_code",  QString(""));
+        data.insert("qs_stamp",            QString(""));
+        data.insert("password",            password);
+
     QString signature = createAccountRequest->generateSignature(data);
     createAccountRequest->request("accounts/create/",signature.toUtf8());
     QObject::connect(createAccountRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(createAccountDataReady(QVariant)));
+}
+
+void Instagram::searchUsername(QString username)
+{
+    InstagramRequest *searchUsernameRequest = new InstagramRequest();
+    searchUsernameRequest->request("users/"+username+"/usernameinfo/", NULL);
+    QObject::connect(searchUsernameRequest,SIGNAL(replySrtingReady(QVariant)), this, SIGNAL(searchUsernameDataReady(QVariant)));
 }
