@@ -93,4 +93,11 @@ Window {
             console.log(message);
         }
     }
+
+    Connections{
+        target: instagram
+        onImageConfigureDataReady:{
+            console.log(answer)
+        }
+    }
 }

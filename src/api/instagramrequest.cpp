@@ -128,6 +128,9 @@ QString InstagramRequest::generateSignature(QJsonObject data)
     QJsonDocument data_doc(data);
     QString data_string(data_doc.toJson(QJsonDocument::Compact));
 
+//Fix to image config string
+    data_string.replace("\"crop_center\":[0,0]","\"crop_center\":[0.0,-0.0]");
+
     HmacSHA *hmac = new HmacSHA();
     QByteArray hash = hmac->hash(data_string.toUtf8(), IS_SIG_KEY.toUtf8());
 

@@ -257,6 +257,7 @@ void Instagram::configurePhoto(QVariant answer)
         else
         {
             QImage image = QImage(this->m_image_path);
+            InstagramRequest *configureImageRequest = new InstagramRequest();
 
             QJsonObject device;
                 device.insert("manufacturer",   "Xiaomi");
@@ -266,14 +267,18 @@ void Instagram::configurePhoto(QVariant answer)
             QJsonObject extra;
                 extra.insert("source_width",    image.width());
                 extra.insert("source_height",   image.height());
+            QJsonArray crop_original_size = {image.width(), image.height()};
+            QJsonArray crop_center = {0.0,-0.0};
             QJsonObject edits;
-                edits.insert("crop_original_size", QString(image.width()+","+image.height()));
+                edits.insert("crop_original_size", crop_original_size);
+                edits.insert("crop_zoom",          1.3333334);
+                edits.insert("crop_center",        crop_center);
 
             QJsonObject data;
                 data.insert("upload_id",            upload_id);
                 data.insert("camera_model",         "HM1S");
                 data.insert("source_type",          3);
-                data.insert("date_time_original",   QDateTime::currentDateTime().toString("YY:MM:dd HH:mm:ss"));
+                data.insert("date_time_original",   QDateTime::currentDateTime().toString("yyyy:MM:dd HH:mm:ss"));
                 data.insert("camera_make",          "XIAOMI");
                 data.insert("edits",                edits);
                 data.insert("extra",                extra);
@@ -282,8 +287,10 @@ void Instagram::configurePhoto(QVariant answer)
                 data.insert("_uuid",                this->m_uuid);
                 data.insert("_uid",                 this->m_username_id);
                 data.insert("_csrftoken",           "Set-Cookie: csrftoken="+this->m_token);
-           QJsonDocument doc(data);
-           qDebug() << doc.toJson();
+
+            QString signature = configureImageRequest->generateSignature(data);
+            configureImageRequest->request("media/configure/",signature.toUtf8());
+            QObject::connect(configureImageRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(imageConfigureDataReady(QVariant)));
         }
     }
     this->m_caption = "";

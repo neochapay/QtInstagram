@@ -94,6 +94,8 @@ signals:
     void mediaEdited(QVariant answer);
     void mediaDeleted(QVariant answer);
 
+    void imageConfigureDataReady(QVariant answer);
+
     void removeSelftagDone(QVariant answer);
     void commentPosted(QVariant answer);
     void commentDeleted(QVariant answer);
