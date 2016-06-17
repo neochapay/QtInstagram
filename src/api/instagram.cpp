@@ -195,7 +195,7 @@ void Instagram::postImage(QString path, QString caption, QString upload_id)
     QFileInfo info(image.fileName());
     QString ext = info.completeSuffix();
 
-    QString boundary = "-----------------------8987654433";
+    QString boundary = this->m_uuid;
 
     if(upload_id.size() == 0)
     {
@@ -203,31 +203,29 @@ void Instagram::postImage(QString path, QString caption, QString upload_id)
     }
 /*Body build*/
     QByteArray body = "";
-    body += "--"+boundary+"--\r\n";
-    body += "Content-Disposition: form-data; name=\"upload_id\"";
-    body += "\r\n\r\n"+upload_id+"\r\n";
+    body += "--"+boundary+"\r\n";
+    body += "Content-Disposition: form-data; name=\"upload_id\"\r\n\r\n";
+    body += upload_id+"\r\n";
 
-    body += "--"+boundary+"--\r\n";
-    body += "Content-Disposition: form-data; name=\"_uuid\"";
-    body += "\r\n\r\n"+this->m_uuid+"\r\n";
+    body += "--"+boundary+"\r\n";
+    body += "Content-Disposition: form-data; name=\"_uuid\"\r\n\r\n";
+    body += this->m_uuid.replace("{","").replace("}","")+"\r\n";
 
-    body += "--"+boundary+"--\r\n";
-    body += "Content-Disposition: form-data; name=\"_csrftoken\"";
-    body += "\r\n\r\n"+this->m_token+"\r\n";
+    body += "--"+boundary+"\r\n";
+    body += "Content-Disposition: form-data; name=\"_csrftoken\"\r\n\r\n";
+    body += this->m_token+"\r\n";
 
-    body += "--"+boundary+"--\r\n";
-    body += "Content-Disposition: form-data; name=\"photo\"; filename\"=pending_media_"+upload_id+"."+ext+"\"";
-    body += "\r\nContent-Transfer-Encoding: binary";
-    body += "\r\nContent-Type: application/octet-stream";
-    //body += "\r\n\r\n"+dataStream+"\r\n";
+    body += "--"+boundary+"\r\n";
+    body += "Content-Disposition: form-data; name=\"image_compression\"\r\n\r\n";
+    body += "{\"lib_name\":\"jt\",\"lib_version\":\"1.3.0\",\"quality\":\"70\"}\r\n";
 
-    body += "--"+boundary+"--\r\n";
-    body += "Content-Disposition: form-data; name=\"image_compression\"";
-    body += "\r\n\r\n{\"lib_name\":\"jt\",\"lib_version\":\"1.3.0\",\"quality\":\"70\"}\r\n";
+    body += "--"+boundary+"\r\n";
+    body += "Content-Disposition: form-data; name=\"photo\"; filename=\"pending_media_"+upload_id+"."+ext+"\"\r\n";
+    body += "Content-Transfer-Encoding: binary\r\n";
+    body += "Content-Type: application/octet-stream\r\n\r\n";
 
+    body += dataStream+"\r\n";
     body += "--"+boundary+"--";
-
-    qDebug() << body;
 
     InstagramRequest *putPhotoReqest = new InstagramRequest();
     putPhotoReqest->fileRquest("upload/photo/",boundary, body);

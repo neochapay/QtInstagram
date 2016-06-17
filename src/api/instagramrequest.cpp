@@ -33,8 +33,7 @@ void InstagramRequest::fileRquest(QString endpoint, QString boundary, QByteArray
     f.open(QIODevice::ReadOnly);
     QDataStream s(&f);
 
-    //QUrl url(API_URL+endpoint);
-    QUrl url("http://muzakkord.ru/test/");
+    QUrl url(API_URL+endpoint);
     QNetworkRequest request(url);
 
     while(!s.atEnd()){
