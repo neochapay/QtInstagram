@@ -90,6 +90,7 @@ Window {
         onError:{
             failAction.text = message
             failAction.visible = true;
+            console.log(message);
         }
     }
 }

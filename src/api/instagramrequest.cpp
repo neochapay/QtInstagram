@@ -59,7 +59,7 @@ void InstagramRequest::fileRquest(QString endpoint, QString boundary, QByteArray
     this->m_manager->setCookieJar(this->m_jar);
     this->m_reply = this->m_manager->post(request,data);
 
-    QObject::connect(this->m_reply, SIGNAL(finished()), this, SLOT(finishPutFile()));
+    QObject::connect(this->m_reply, SIGNAL(finished()), this, SLOT(finishGetUrl()));
     QObject::connect(this->m_manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(saveCookie()));
 }
 
@@ -104,17 +104,6 @@ void InstagramRequest::finishGetUrl()
     {
         //qDebug() << answer;
         emit replySrtingReady(answer);
-    }
-}
-
-void InstagramRequest::finishPutFile()
-{
-    this->m_reply->deleteLater();
-    QVariant answer = QString::fromUtf8(this->m_reply->readAll());
-    if(answer.toString().length() > 1)
-    {
-        qDebug() << answer;
-        emit replyFileSrtingReady(answer);
     }
 }
 

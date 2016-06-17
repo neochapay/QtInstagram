@@ -13,6 +13,7 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QJsonArray>
+#include <QImage>
 
 #include <QDataStream>
 
@@ -188,6 +189,9 @@ void Instagram::syncFeatures()
 //FIXME: uploadImage is not public yeat. Give me few weeks to optimize code
 void Instagram::postImage(QString path, QString caption, QString upload_id)
 {
+    this->m_caption = caption;
+    this->m_image_path = path;
+
     QFile image(path);
     image.open(QIODevice::ReadOnly);
     QByteArray dataStream = image.readAll();
@@ -229,6 +233,61 @@ void Instagram::postImage(QString path, QString caption, QString upload_id)
 
     InstagramRequest *putPhotoReqest = new InstagramRequest();
     putPhotoReqest->fileRquest("upload/photo/",boundary, body);
+
+    QObject::connect(putPhotoReqest,SIGNAL(replySrtingReady(QVariant)),this,SLOT(configurePhoto(QVariant)));
+}
+
+void Instagram::configurePhoto(QVariant answer)
+{
+    qDebug() << "conf";
+
+    QJsonDocument jsonResponse = QJsonDocument::fromJson(answer.toByteArray());
+    QJsonObject jsonObject = jsonResponse.object();
+    if(jsonObject["status"].toString() != QString("ok"))
+    {
+        emit error(jsonObject["message"].toString());
+    }
+    else
+    {
+        QString upload_id = jsonObject["upload_id"].toString();
+        if(upload_id.length() == 0)
+        {
+            emit error("Wrong UPLOAD_ID:"+upload_id);
+        }
+        else
+        {
+            QImage image = QImage(this->m_image_path);
+
+            QJsonObject device;
+                device.insert("manufacturer",   "Xiaomi");
+                device.insert("model",          "HM 1SW");
+                device.insert("android_version",18);
+                device.insert("android_release","4.3");
+            QJsonObject extra;
+                extra.insert("source_width",    image.width());
+                extra.insert("source_height",   image.height());
+            QJsonObject edits;
+                edits.insert("crop_original_size", QString(image.width()+","+image.height()));
+
+            QJsonObject data;
+                data.insert("upload_id",            upload_id);
+                data.insert("camera_model",         "HM1S");
+                data.insert("source_type",          3);
+                data.insert("date_time_original",   QDateTime::currentDateTime().toString("YY:MM:dd HH:mm:ss"));
+                data.insert("camera_make",          "XIAOMI");
+                data.insert("edits",                edits);
+                data.insert("extra",                extra);
+                data.insert("device",               device);
+                data.insert("caption",              this->m_caption);
+                data.insert("_uuid",                this->m_uuid);
+                data.insert("_uid",                 this->m_username_id);
+                data.insert("_csrftoken",           "Set-Cookie: csrftoken="+this->m_token);
+           QJsonDocument doc(data);
+           qDebug() << doc.toJson();
+        }
+    }
+    this->m_caption = "";
+    this->m_image_path = "";
 }
 
 //FIXME: uploadImage is not public yeat. Give me few weeks to optimize code

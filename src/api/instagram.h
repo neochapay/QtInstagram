@@ -78,6 +78,9 @@ private:
     QString m_rank_token;
     QString m_IGDataPath;
 
+    QString m_caption;
+    QString m_image_path;
+
     QDir m_data_path;
 
     bool m_isLoggedIn = false;
@@ -137,6 +140,7 @@ private slots:
     void doLogin();
     void syncFeatures();
     void profileConnect(QVariant profile);
+    void configurePhoto(QVariant answer);
 };
 
 #endif // INSTAGRAM_H

@@ -30,12 +30,11 @@ private:
 
 signals:
     void replySrtingReady(QVariant ans);
-    void replyFileSrtingReady(QVariant ans);
 
 public slots:
+
 private slots:
     void finishGetUrl();
-    void finishPutFile();
     void saveCookie();
 };
 
