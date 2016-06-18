@@ -1,20 +1,20 @@
 # QtInstagram
-Unofficial Instagram API and Client writen on Qt. Based on https://github.com/mgp25/Instagram-API
+Unofficial Instagram API and Client writen in Qt. Based on https://github.com/mgp25/Instagram-API
 
-IMPORTANT: You account may be block if you use this code. Or maybe not ^_^
+IMPORTANT: Your account may be blocked if you use this code. Or maybe not ^_^
 
-In appication you can:
+In application you can:
 * Login
-* See you timeline
+* See your timeline
 * Send like
 * Send comment
 
-In API You can:
+In the API you can:
 * Post image (not public yet - give me fiew weeks to optimize code)
 * Post video (not public yet - give me fiew weeks to optimize code)
 * Registration
-* Set you profile public or private
-* Edit you profile
+* Set your profile public or private
+* Edit your profile
 * Change (not public yet) and remove profile picture
 * Remove self tags
 * Post comments
