@@ -193,7 +193,12 @@ void Instagram::postImage(QString path, QString caption, QString upload_id)
     this->m_image_path = path;
 
     QFile image(path);
-    image.open(QIODevice::ReadOnly);
+    if(!image.open(QIODevice::ReadOnly))
+    {
+        qDebug() << "Image " << path << " not found";
+        emit error("Image not found");
+    }
+
     QByteArray dataStream = image.readAll();
 
     QFileInfo info(image.fileName());
@@ -239,8 +244,6 @@ void Instagram::postImage(QString path, QString caption, QString upload_id)
 
 void Instagram::configurePhoto(QVariant answer)
 {
-    qDebug() << "conf";
-
     QJsonDocument jsonResponse = QJsonDocument::fromJson(answer.toByteArray());
     QJsonObject jsonObject = jsonResponse.object();
     if(jsonObject["status"].toString() != QString("ok"))
@@ -260,15 +263,21 @@ void Instagram::configurePhoto(QVariant answer)
             InstagramRequest *configureImageRequest = new InstagramRequest();
 
             QJsonObject device;
-                device.insert("manufacturer",   "Xiaomi");
-                device.insert("model",          "HM 1SW");
+                device.insert("manufacturer",   QString("Xiaomi"));
+                device.insert("model",          QString("HM 1SW"));
                 device.insert("android_version",18);
-                device.insert("android_release","4.3");
+                device.insert("android_release",QString("4.3"));
             QJsonObject extra;
                 extra.insert("source_width",    image.width());
                 extra.insert("source_height",   image.height());
-            QJsonArray crop_original_size = {image.width(), image.height()};
-            QJsonArray crop_center = {0.0,-0.0};
+
+            QJsonArray crop_original_size;
+                crop_original_size.append(image.width());
+                crop_original_size.append(image.height());
+            QJsonArray crop_center;
+                crop_center.append(0.0);
+                crop_center.append(-0.0);
+
             QJsonObject edits;
                 edits.insert("crop_original_size", crop_original_size);
                 edits.insert("crop_zoom",          1.3333334);
@@ -276,10 +285,10 @@ void Instagram::configurePhoto(QVariant answer)
 
             QJsonObject data;
                 data.insert("upload_id",            upload_id);
-                data.insert("camera_model",         "HM1S");
+                data.insert("camera_model",         QString("HM1S"));
                 data.insert("source_type",          3);
                 data.insert("date_time_original",   QDateTime::currentDateTime().toString("yyyy:MM:dd HH:mm:ss"));
-                data.insert("camera_make",          "XIAOMI");
+                data.insert("camera_make",          QString("XIAOMI"));
                 data.insert("edits",                edits);
                 data.insert("extra",                extra);
                 data.insert("device",               device);
@@ -315,6 +324,20 @@ void Instagram::editMedia(QString mediaId, QString captionText)
     QString signature = editMediaRequest->generateSignature(data);
     editMediaRequest->request("media/"+mediaId+"/edit_media/",signature.toUtf8());
     QObject::connect(editMediaRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(mediaEdited(QVariant)));
+}
+
+void Instagram::infoMedia(QString mediaId)
+{
+    InstagramRequest *infoMediaRequest = new InstagramRequest();
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_uid",         this->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
+        data.insert("media_id", mediaId);
+
+    QString signature = infoMediaRequest->generateSignature(data);
+    infoMediaRequest->request("media/"+mediaId+"/info/",signature.toUtf8());
+    QObject::connect(infoMediaRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(mediaInfoReady(QVariant)));
 }
 
 void Instagram::deleteMedia(QString mediaId)
@@ -661,10 +684,17 @@ void Instagram::userFriendship(QString userId)
     QObject::connect(userFriendshipRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(userFriendshipDataReady(QVariant)));
 }
 
-void Instagram::getLikedMedia()
+void Instagram::getLikedMedia(QString maxid)
 {
     InstagramRequest *getLikedMediaRequest = new InstagramRequest();
-    getLikedMediaRequest->request("feedd/liked/?",NULL);
+    if(maxid.length() == 0)
+    {
+        getLikedMediaRequest->request("feed/liked/?",NULL);
+    }
+    else
+    {
+        getLikedMediaRequest->request("feed/liked/?max_id="+maxid,NULL);
+    }
     QObject::connect(getLikedMediaRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(likedMediaDataReady(QVariant)));
 }
 
@@ -729,4 +759,22 @@ void Instagram::searchUsername(QString username)
     InstagramRequest *searchUsernameRequest = new InstagramRequest();
     searchUsernameRequest->request("users/"+username+"/usernameinfo/", NULL);
     QObject::connect(searchUsernameRequest,SIGNAL(replySrtingReady(QVariant)), this, SIGNAL(searchUsernameDataReady(QVariant)));
+}
+
+void Instagram::rotateImg(QString filename, qreal deg)
+{
+    QImage image(filename);
+    QTransform rot;
+    rot.rotate(deg);
+    image = image.transformed(rot);
+
+    QFile imgFile(filename);
+    imgFile.open(QIODevice::ReadWrite);
+
+    if(!image.save(&imgFile,"JPG",100))
+    {
+        qDebug() << "NOT SAVE";
+    }
+
+    imgFile.close();
 }
