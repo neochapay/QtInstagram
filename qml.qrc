@@ -1,12 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file>img/icon.svg</file>
-        <file>img/icon64.png</file>
-        <file>img/icon128.png</file>
-        <file>img/icon256.png</file>
-        <file>img/icon512.png</file>
-        <file>img/prosto_back.jpg</file>
-        <file>img/name1024.png</file>
         <file>qml/main.qml</file>
         <file>qml/pages/FrontPage.qml</file>
         <file>qml/pages/LoginPage.qml</file>
