@@ -18,8 +18,8 @@ public:
 
 private:
     QString API_URL = "https://i.instagram.com/api/v1/";
-    QString USER_AGENT = "Instagram 8.5.1 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)";
-    QString IS_SIG_KEY = "b5d839444818714bdab3e288e6da9b515f85b000b6e6b452552bfd399cb56cf0";
+    QString USER_AGENT = "Instagram 10.3.2 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)";
+    QString IS_SIG_KEY = "5ad7d6f013666cc93c88fc8af940348bd067b68f0dce3c85122a923f4f74b251";
     QString SIG_KEY_VERSION = "4";
 
     QDir m_data_path;
