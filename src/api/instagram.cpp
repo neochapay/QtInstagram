@@ -114,8 +114,6 @@ void Instagram::doLogin()
     QFile f(m_data_path.absolutePath()+"/cookies.dat");
     if (!f.open(QFile::ReadOnly))
     {
-        qDebug() << m_data_path.absolutePath()+"/cookies.dat";
-        qDebug() << f.errorString();
         emit error("Can`t open token file");
     }
     QTextStream in(&f);
@@ -123,7 +121,6 @@ void Instagram::doLogin()
     if(rx.cap(1).length() > 0)
     {
         this->m_token = rx.cap(1);
-        qDebug() << rx.cap(1);
     }
     else
     {
@@ -195,7 +192,6 @@ void Instagram::postImage(QString path, QString caption, QString upload_id)
     QFile image(path);
     if(!image.open(QIODevice::ReadOnly))
     {
-        qDebug() << "Image " << path << " not found";
         emit error("Image not found");
     }
 

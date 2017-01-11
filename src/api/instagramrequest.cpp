@@ -102,7 +102,6 @@ void InstagramRequest::finishGetUrl()
     QVariant answer = QString::fromUtf8(this->m_reply->readAll());
     if(answer.toString().length() > 1)
     {
-        //qDebug() << answer;
         emit replySrtingReady(answer);
     }
 }
