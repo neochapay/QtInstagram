@@ -54,6 +54,9 @@ public slots:
     void like(QString mediaId);
     void unLike(QString mediaId);
 
+    void likeComment(QString commentId);
+    void unLikeComment(QString commentId);
+
     void follow(QString userId);
     void unFollow(QString userId);
     void block(QString userId);
@@ -124,6 +127,9 @@ signals:
     void mediaCommentsDataReady(QVariant answer);
     void likeDataReady(QVariant answer);
     void unLikeDataReady(QVariant answer);
+
+    void likeCommentDataReady(QVariant answer);
+    void unLikeCommentDataReady(QVariant answer);
 
     void followDataReady(QVariant answer);
     void unFollowDataReady(QVariant answer);
