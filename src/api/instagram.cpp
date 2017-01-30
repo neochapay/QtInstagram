@@ -801,3 +801,35 @@ void Instagram::rotateImg(QString filename, qreal deg)
 
     imgFile.close();
 }
+
+void Instagram::cropImg(QString filename, bool squared)
+{
+
+    QImage image(filename);
+    QTransform rot;
+    rot.rotate(90);
+    image = image.transformed(rot);
+
+    int min_size = qMin(image.width(),image.height());
+    int max_size = qMax(image.width(),image.height());
+
+    if(squared)
+    {
+        image = image.copy(0,(max_size-min_size)/2,min_size,min_size);
+    }
+    else
+    {
+        int size54 = min_size*5/4;
+        image = image.copy(0,(max_size-size54)/2,min_size,size54);
+    }
+
+    QFile imgFile(filename);
+    imgFile.open(QIODevice::ReadWrite);
+
+    if(!image.save(&imgFile,"JPG",100))
+    {
+        qDebug() << "NOT SAVE";
+    }
+
+    imgFile.close();
+}
