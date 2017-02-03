@@ -69,6 +69,11 @@ public slots:
 
     void searchUsername(QString username);
 
+    void getInbox();
+    void getDirectThread(QString threadId);
+    void getPendingInbox();
+    void getRecentRecipients();
+
     void rotateImg(QString filename, qreal deg);
     void cropImg(QString filename, bool squared);
 
@@ -147,6 +152,11 @@ signals:
     void error(QString message);
 
     void searchUsernameDataReady(QVariant answer);
+
+    void getInboxDataReady(QVariant answer);
+    void getDirectThreadDataReady(QVariant answer);
+    void getPendingInboxDataReady(QVariant answer);
+    void getRecentRecipientsDataReady(QVariant answer);
 
 private slots:
     void setUser();

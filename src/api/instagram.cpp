@@ -784,6 +784,41 @@ void Instagram::searchUsername(QString username)
     QObject::connect(searchUsernameRequest,SIGNAL(replySrtingReady(QVariant)), this, SIGNAL(searchUsernameDataReady(QVariant)));
 }
 
+void Instagram::getInbox()
+{
+    InstagramRequest *getInboxRequest = new InstagramRequest();
+    getInboxRequest->request("direct_v2/inbox/", NULL);
+    QObject::connect(getInboxRequest,SIGNAL(replySrtingReady(QVariant)), this, SIGNAL(getInboxDataReady(QVariant)));
+}
+
+void Instagram::getDirectThread(QString threadId)
+{
+    InstagramRequest *getDirectThreadRequest = new InstagramRequest();
+    getDirectThreadRequest->request("direct_v2/threads/"+threadId+"/", NULL);
+    QObject::connect(getDirectThreadRequest,SIGNAL(replySrtingReady(QVariant)), this, SIGNAL(getDirectThreadDataReady(QVariant)));
+}
+
+void Instagram::getPendingInbox()
+{
+    InstagramRequest *getPendingInboxRequest = new InstagramRequest();
+    getPendingInboxRequest->request("direct_v2/pending_inbox/", NULL);
+    QObject::connect(getPendingInboxRequest,SIGNAL(replySrtingReady(QVariant)), this, SIGNAL(getPendingInboxDataReady(QVariant)));
+}
+
+void Instagram::getRecentRecipients()
+{
+    InstagramRequest *getRecentRecipientsRequest = new InstagramRequest();
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_csrftoken",   QString("missing"));
+        data.insert("show_threads", QString("true"));
+
+    QString signature = getRecentRecipientsRequest->generateSignature(data);
+    getRecentRecipientsRequest->request("direct_share/recent_recipients/", signature.toUtf8());
+    QObject::connect(getRecentRecipientsRequest,SIGNAL(replySrtingReady(QVariant)), this, SIGNAL(getRecentRecipientsDataReady(QVariant)));
+
+}
+
 void Instagram::rotateImg(QString filename, qreal deg)
 {
     QImage image(filename);
