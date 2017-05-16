@@ -721,6 +721,39 @@ void Instagram::getLikedMedia(QString maxid)
     QObject::connect(getLikedMediaRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(likedMediaDataReady(QVariant)));
 }
 
+void Instagram::getUserFollowings(QString userId, QString maxId)
+{
+    InstagramRequest *getUserFollowingsRequest = new InstagramRequest();
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_uid",         this->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
+    if(maxId != ""){
+        data.insert("max_id",     maxId);
+    }
+
+    QString signature = getUserFollowingsRequest->generateSignature(data);
+    getUserFollowingsRequest->request("friendships/"+userId+"/following/",signature.toUtf8());
+    QObject::connect(getUserFollowingsRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(userFollowingsDataReady(QVariant)));
+}
+
+void Instagram::getUserFollowers(QString userId, QString maxId)
+{
+    qDebug() << userId;
+    InstagramRequest *getUserFollowersRequest = new InstagramRequest();
+    QJsonObject data;
+        data.insert("_uuid",        this->m_uuid);
+        data.insert("_uid",         this->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
+    if(maxId != ""){
+        data.insert("max_id",     maxId);
+    }
+
+    QString signature = getUserFollowersRequest->generateSignature(data);
+    getUserFollowersRequest->request("friendships/"+userId+"/followers/",signature.toUtf8());
+    QObject::connect(getUserFollowersRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(userFollowersDataReady(QVariant)));
+}
+
 /*
  * Return json string
  * {

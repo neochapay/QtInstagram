@@ -64,6 +64,9 @@ public slots:
     void userFriendship(QString userId);
     void getLikedMedia(QString maxid = "");
 
+    void getUserFollowings(QString userId, QString maxId = "");
+    void getUserFollowers(QString userId, QString maxId = "");
+
     void checkUsername(QString username);
     void createAccount(QString username, QString password, QString email);
 
@@ -144,6 +147,9 @@ signals:
     void unBlockDataReady(QVariant answer);
     void userFriendshipDataReady(QVariant answer);
     void likedMediaDataReady(QVariant answer);
+
+    void userFollowingsDataReady(QVariant answer);
+    void userFollowersDataReady(QVariant answer);
 
     void doLogout(QVariant answer);
 
