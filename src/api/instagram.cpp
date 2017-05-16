@@ -868,3 +868,24 @@ void Instagram::cropImg(QString filename, bool squared)
 
     imgFile.close();
 }
+
+void Instagram::cropImg(QString in_filename, QString out_filename, int topSpace, bool squared)
+{
+    QImage image(in_filename);
+    int min_size = qMin(image.width(),image.height());
+
+    if(squared)
+    {
+        image = image.copy(0,topSpace,min_size,min_size);
+    }
+    else
+    {
+        int size54 = min_size*5/4;
+        image = image.copy(0,topSpace,min_size,size54);
+    }
+
+    if(!image.save(out_filename))
+    {
+        qDebug() << "NOT SAVE HERE";
+    }
+}
