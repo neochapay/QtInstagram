@@ -60,7 +60,7 @@ void Instagram::setUser()
 {
     if(this->m_username.length() == 0 or this->m_password.length() == 0)
     {
-        emit error("Username anr/or password is clean");
+        emit error("Username and/or password is clean");
     }
     else
     {
@@ -158,7 +158,9 @@ void Instagram::profileConnect(QVariant profile)
         QJsonObject user = profile_obj["logged_in_user"].toObject();
 
         this->m_isLoggedIn = true;
+
         this->m_username_id = QString::number(user["pk"].toDouble(),'g', 10);
+
         this->m_rank_token = this->m_username_id+"_"+this->m_uuid;
 
         this->syncFeatures();
@@ -526,6 +528,23 @@ void Instagram::tagFeed(QString tag)
     getTagFeedRequest->request("feed/tag/"+tag+"/?rank_token="+this->m_rank_token+"&ranked_content=true&",NULL);
     QObject::connect(getTagFeedRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(tagFeedDataReady(QVariant)));
 }
+
+void Instagram::userFeed(QString user)
+{
+    InstagramRequest *getUserFeedRequest = new InstagramRequest();
+    getUserFeedRequest->request("users/search/?query="+user+"&is_typeahead=true&rank_token="+this->m_rank_token+"&",NULL);
+    QObject::connect(getUserFeedRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(userFeedDataReady(QVariant)));
+}
+
+void Instagram::exploreFeed(QString max_id)
+{
+    InstagramRequest *getExploreRequest = new InstagramRequest();
+    getExploreRequest->request("discover/explore/?"
+                               //+max_id.length()>0?"max_id="+max_id+"&":"&"
+                               ,NULL);
+    QObject::connect(getExploreRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(exploreDataReady(QVariant)));
+}
+
 
 void Instagram::getTimeLine(QString max_id)
 {
