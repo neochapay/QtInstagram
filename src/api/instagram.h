@@ -45,7 +45,8 @@ public slots:
     void getUserTags(QString usernameId);
     void tagFeed(QString tag);
     void userFeed(QString user);
-    void exploreFeed(QString max_id="");
+    void exploreFeed(QString session_id="");
+    void storiesFeed(QString session_id="");
 
     void getTimeLine(QString max_id = "");
     void getUsernameFeed(QString usernameID, QString maxid = "", QString minTimestamp = "");
@@ -135,6 +136,7 @@ signals:
     void userTagsDataReady(QVariant answer);
     void tagFeedDataReady(QVariant answer);
     void exploreDataReady(QVariant answer);
+    void storiesDataReady(QVariant answer);
 
     void userFeedDataReady(QVariant answer);
     void timeLineDataReady(QVariant answer);

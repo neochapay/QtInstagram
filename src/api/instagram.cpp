@@ -536,13 +536,21 @@ void Instagram::userFeed(QString user)
     QObject::connect(getUserFeedRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(userFeedDataReady(QVariant)));
 }
 
-void Instagram::exploreFeed(QString max_id)
+void Instagram::exploreFeed(QString session_id)
 {
     InstagramRequest *getExploreRequest = new InstagramRequest();
-    getExploreRequest->request("discover/explore/?"
-                               //+max_id.length()>0?"max_id="+max_id+"&":"&"
+    getExploreRequest->request("discover/explore/?is_prefetch=false&is_from_promote=false&session_id=" + this->m_token +
+                               "&module=explore_popular"
                                ,NULL);
     QObject::connect(getExploreRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(exploreDataReady(QVariant)));
+}
+
+void Instagram::storiesFeed(QString session_id)
+{
+    InstagramRequest *getStoriesRequest = new InstagramRequest();
+    getStoriesRequest->request("feed/reels_tray/?"
+                               ,NULL);
+    QObject::connect(getStoriesRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(storiesDataReady(QVariant)));
 }
 
 
