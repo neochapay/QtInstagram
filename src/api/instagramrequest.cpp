@@ -9,6 +9,7 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QStandardPaths>
+#include <iostream>
 
 
 
@@ -81,13 +82,15 @@ void InstagramRequest::request(QString endpoint, QByteArray post)
             this->m_jar->insertCookie(list.at(0));
         }
     }
-
+    //QTextStream(stdout)<<url.toString()<<endl;
     request.setRawHeader("Connection","close");
     request.setRawHeader("Accept","*/*");
     request.setRawHeader("Content-type","application/x-www-form-urlencoded; charset=UTF-8");
     request.setRawHeader("Cookie2","$Version=1");
     request.setRawHeader("Accept-Language","en-US");
     request.setRawHeader("User-Agent",USER_AGENT.toUtf8());
+
+
 
     this->m_manager->setCookieJar(this->m_jar);
     this->m_reply = this->m_manager->post(request,post);
