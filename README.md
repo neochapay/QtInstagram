@@ -12,7 +12,7 @@ In application you can:
 In the API you can:
 * Post image (not public yet - give me fiew weeks to optimize code)
 * Post video (not public yet - give me fiew weeks to optimize code)
-* Registration
+* Registration (probably doesnt work, u shuld create account via webpage)
 * Set your profile public or private
 * Edit your profile
 * Change (not public yet) and remove profile picture
@@ -23,3 +23,6 @@ In the API you can:
 * Get user tags and tagfeed
 * Get media likes and comments
 * Get self and users timelines
+* Get stories
+* Get Explore/Discover feed
+* Get suggested people 
