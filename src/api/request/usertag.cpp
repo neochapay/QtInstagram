@@ -2,7 +2,6 @@
 #include "../instagramrequest.h"
 #include <QJsonObject>
 
-
 //getUserTag
 void Instagramv2::getUserTags(QString userId, QString max_id, QString minTimestamp)
 {
@@ -16,7 +15,6 @@ void Instagramv2::getUserTags(QString userId, QString max_id, QString minTimesta
     QObject::connect(getUserTagsRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(userTagsDataReady(QVariant)));
 }
 
-
 void Instagramv2::removeSelftag(QString mediaId)
 {
     InstagramRequest *removeSelftagRequest = new InstagramRequest();
@@ -29,4 +27,3 @@ void Instagramv2::removeSelftag(QString mediaId)
     removeSelftagRequest->request("usertags/"+mediaId+"/remove/",signature.toUtf8());
     QObject::connect(removeSelftagRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(removeSelftagDone(QVariant)));
 }
-

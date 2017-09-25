@@ -14,7 +14,7 @@ public:
 public slots:
     Q_INVOKABLE void login(bool forse = false);
     Q_INVOKABLE void logout();
-//Maked there
+//Defined only there
     Q_INVOKABLE void setUsername(QString username){this->m_username = username;}
     Q_INVOKABLE void setPassword(QString password){this->m_password = password;}
     Q_INVOKABLE QString getUsernameId(){return this->m_username_id;}
@@ -27,14 +27,10 @@ public slots:
     Q_INVOKABLE void getPopularFeed();
     Q_INVOKABLE void searchUsername(QString username);
 
-
-//Image manipulate
+    //Image manipulate
     Q_INVOKABLE void rotateImg(QString filename, qreal deg);
     Q_INVOKABLE void cropImg(QString filename, bool squared);
     Q_INVOKABLE void cropImg(QString in_filename, QString out_filename, int topSpace, bool squared);
-
-
-
 
     //Account
     Q_INVOKABLE void setPrivateAccount();
@@ -265,12 +261,9 @@ signals:
 
     void imageConfigureDataReady(QVariant answer);
 
-
     //Unnown source
     void popularFeedDataReady(QVariant answer);
     void searchUsernameDataReady(QVariant answer);
-
-
 
     //Refactored
 

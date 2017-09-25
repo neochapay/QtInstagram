@@ -8,7 +8,6 @@ void Instagramv2::changeProfilePicture(QFile *photo)
 
 }
 
-
 void Instagramv2::removeProfilePicture()
 {
     InstagramRequest *removeProfilePictureRequest = new InstagramRequest();

@@ -9,7 +9,6 @@ void Instagramv2::getInfoByName(QString username)
     QObject::connect(getInfoByNameRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(infoByNameDataReady(QVariant)));
 }
 
-
 //old getUsernameInfo
 void Instagramv2::getInfoById(QString userId)
 {
@@ -49,15 +48,6 @@ void Instagramv2::getFriendship(QString userId)
 void Instagramv2::getFollowing(QString userId, QString max_id, QString searchQuery)
 {
     InstagramRequest *getFollowingRequest = new InstagramRequest();
-    //QJsonObject data;
-       //data.insert("_uuid",        this->m_uuid);
-        //data.insert("_uid",         this->m_username_id);
-        //data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
-    //if(maxId != ""){
-        //data.insert("max_id",     maxId);
-    //}
-
-    //QString signature = getUserFollowingsRequest->generateSignature(data);
 
     getFollowingRequest->request("friendships/"+userId+"/following/?"
                                  "rank_token="+this->m_rank_token +
@@ -69,7 +59,6 @@ void Instagramv2::getFollowing(QString userId, QString max_id, QString searchQue
 
 void Instagramv2::getFollowers(QString userId, QString max_id, QString searchQuery)
 {
-    //qDebug() << userId;
     InstagramRequest *getFollowersRequest = new InstagramRequest();
     //QJsonObject data;
         //data.insert("_uuid",        this->m_uuid);
@@ -170,6 +159,7 @@ void Instagramv2::block(QString userId)
     data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
     data.insert("user_id",      userId);
     QString signature = blockRequest->generateSignature(data);
+
     blockRequest->request("friendships/block/" + userId + "/?"
                           ,signature.toUtf8());
     QObject::connect(blockRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(blockDataReady(QVariant)));
@@ -193,12 +183,8 @@ void Instagramv2::unBlock(QString userId)
 void Instagramv2::getSugestedUser(QString userId) {
     InstagramRequest *getSuggestedRequest = new InstagramRequest();
 
-
     getSuggestedRequest->request("discover/chaining/?"
                                  "target_id="+userId
                              ,NULL);
     QObject::connect(getSuggestedRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(suggestedUserDataReady(QVariant)));
-
-
-
 }

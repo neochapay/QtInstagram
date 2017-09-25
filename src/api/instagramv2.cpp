@@ -3,11 +3,8 @@
  */
 #include "instagramv2.h"
 #include "instagramrequest.h"
-//#include "request/timeline.c"
-
 
 #include <QCryptographicHash>
-
 #include <QFileInfo>
 #include <QStandardPaths>
 #include <QDateTime>
@@ -16,9 +13,7 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QImage>
-
 #include <QDataStream>
-
 #include <QDebug>
 
 Instagramv2::Instagramv2(QObject *parent)

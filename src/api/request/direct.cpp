@@ -33,7 +33,6 @@ void Instagramv2::getDirectThread(QString threadId, QString cursorId)
     QObject::connect(getDirectThreadRequest,SIGNAL(replySrtingReady(QVariant)), this, SIGNAL(directThreadDataReady(QVariant)));
 }
 
-
 void Instagramv2::getRecentRecipients()
 {
     InstagramRequest *getRecentRecipientsRequest = new InstagramRequest();

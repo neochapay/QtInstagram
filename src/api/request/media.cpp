@@ -74,7 +74,6 @@ void Instagramv2::deleteMedia(QString mediaId, QString mediaType)
     QObject::connect(deleteMediaRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(mediaDeleted(QVariant)));
 }
 
-
 void Instagramv2::editMedia(QString mediaId, QString captionText, QString mediaType)
 {
     InstagramRequest *editMediaRequest = new InstagramRequest();
@@ -175,4 +174,3 @@ void Instagramv2::getMediaLikers(QString mediaId)
     getMediaLikersRequest->request("media/"+mediaId+"/likers/",NULL);
     QObject::connect(getMediaLikersRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(mediaLikersDataReady(QVariant)));
 }
-

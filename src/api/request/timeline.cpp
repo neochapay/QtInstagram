@@ -20,12 +20,10 @@ void Instagramv2::getTimelineFeed(QString max_id)
                     (max_id.length()>0 ?  "&max_id="+max_id  : "" );
 
     // "feed/timeline/"
-
     getTimeLineFeedRequest->request(target,signature.toUtf8());
 
     QObject::connect(getTimeLineFeedRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(timelineFeedDataReady(QVariant)));
 }
-
 
 //getUserTimeLine
 void Instagramv2::getUserFeed(QString userID, QString max_id, QString minTimestamp)
