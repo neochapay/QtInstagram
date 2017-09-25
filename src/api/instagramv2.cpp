@@ -1,11 +1,10 @@
 /*
  * BASED ON https://github.com/mgp25/Instagram-API
  */
-#include "instagram.h"
+#include "instagramv2.h"
 #include "instagramrequest.h"
 
 #include <QCryptographicHash>
-
 #include <QFileInfo>
 #include <QStandardPaths>
 #include <QDateTime>
@@ -14,12 +13,10 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QImage>
-
 #include <QDataStream>
-
 #include <QDebug>
 
-Instagram::Instagram(QObject *parent)
+Instagramv2::Instagramv2(QObject *parent)
     : QObject(parent)
 {
     this->m_data_path =  QDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
@@ -37,7 +34,7 @@ Instagram::Instagram(QObject *parent)
     this->setUser();
 }
 
-QString Instagram::generateDeviceId()
+QString Instagramv2::generateDeviceId()
 {
     QFileInfo fi(m_data_path.absolutePath());
     QByteArray volatile_seed = QString::number(fi.created().toMSecsSinceEpoch()).toUtf8();
@@ -56,7 +53,7 @@ QString Instagram::generateDeviceId()
 }
 
 
-void Instagram::setUser()
+void Instagramv2::setUser()
 {
     if(this->m_username.length() == 0 or this->m_password.length() == 0)
     {
@@ -81,7 +78,7 @@ void Instagram::setUser()
 }
 
 
-void Instagram::login(bool forse)
+void Instagramv2::login(bool forse)
 {
     if(!this->m_isLoggedIn or forse)
     {
@@ -92,7 +89,7 @@ void Instagram::login(bool forse)
     }
 }
 
-void Instagram::logout()
+void Instagramv2::logout()
 {
     QFile f_cookie(m_data_path.absolutePath()+"/cookies.dat");
     QFile f_userId(m_data_path.absolutePath()+"/userId.dat");
@@ -107,7 +104,7 @@ void Instagram::logout()
     QObject::connect(looutRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(doLogout(QVariant)));
 }
 
-void Instagram::doLogin()
+void Instagramv2::doLogin()
 {
     InstagramRequest *request = new InstagramRequest();
     QRegExp rx("token=(\\w+);");
@@ -143,7 +140,7 @@ void Instagram::doLogin()
     QObject::connect(request,SIGNAL(replySrtingReady(QVariant)),this,SLOT(profileConnect(QVariant)));
 }
 
-void Instagram::profileConnect(QVariant profile)
+void Instagramv2::profileConnect(QVariant profile)
 {
     QJsonDocument profile_doc = QJsonDocument::fromJson(profile.toString().toUtf8());
     QJsonObject profile_obj = profile_doc.object();
@@ -170,7 +167,7 @@ void Instagram::profileConnect(QVariant profile)
 }
 
 
-void Instagram::syncFeatures()
+void Instagramv2::syncFeatures()
 {
     InstagramRequest *syncRequest = new InstagramRequest();
     QJsonObject data;
@@ -186,7 +183,7 @@ void Instagram::syncFeatures()
 }
 
 //FIXME: uploadImage is not public yeat. Give me few weeks to optimize code
-void Instagram::postImage(QString path, QString caption, QString upload_id)
+void Instagramv2::postImage(QString path, QString caption, QString upload_id)
 {
     this->m_caption = caption;
     this->m_image_path = path;
@@ -240,7 +237,7 @@ void Instagram::postImage(QString path, QString caption, QString upload_id)
     QObject::connect(putPhotoReqest,SIGNAL(replySrtingReady(QVariant)),this,SLOT(configurePhoto(QVariant)));
 }
 
-void Instagram::configurePhoto(QVariant answer)
+void Instagramv2::configurePhoto(QVariant answer)
 {
     QJsonDocument jsonResponse = QJsonDocument::fromJson(answer.toByteArray());
     QJsonObject jsonObject = jsonResponse.object();
@@ -305,12 +302,12 @@ void Instagram::configurePhoto(QVariant answer)
 }
 
 //FIXME: uploadImage is not public yeat. Give me few weeks to optimize code
-void Instagram::postVideo(QFile *video)
+void Instagramv2::postVideo(QFile *video)
 {
 
 }
 
-void Instagram::editMedia(QString mediaId, QString captionText)
+/*void Instagramv2::editMedia(QString mediaId, QString captionText)
 {
     InstagramRequest *editMediaRequest = new InstagramRequest();
     QJsonObject data;
@@ -324,7 +321,7 @@ void Instagram::editMedia(QString mediaId, QString captionText)
     QObject::connect(editMediaRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(mediaEdited(QVariant)));
 }
 
-void Instagram::infoMedia(QString mediaId)
+void Instagramv2::infoMedia(QString mediaId)
 {
     InstagramRequest *infoMediaRequest = new InstagramRequest();
     QJsonObject data;
@@ -338,7 +335,7 @@ void Instagram::infoMedia(QString mediaId)
     QObject::connect(infoMediaRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(mediaInfoReady(QVariant)));
 }
 
-void Instagram::deleteMedia(QString mediaId)
+void Instagramv2::deleteMedia(QString mediaId)
 {
     InstagramRequest *deleteMediaRequest = new InstagramRequest();
     QJsonObject data;
@@ -350,9 +347,9 @@ void Instagram::deleteMedia(QString mediaId)
     QString signature = deleteMediaRequest->generateSignature(data);
     deleteMediaRequest->request("media/"+mediaId+"/delete/",signature.toUtf8());
     QObject::connect(deleteMediaRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(mediaDeleted(QVariant)));
-}
+}*/
 
-void Instagram::removeSelftag(QString mediaId)
+/*void Instagramv2::removeSelftag(QString mediaId)
 {
     InstagramRequest *removeSelftagRequest = new InstagramRequest();
     QJsonObject data;
@@ -363,9 +360,9 @@ void Instagram::removeSelftag(QString mediaId)
     QString signature = removeSelftagRequest->generateSignature(data);
     removeSelftagRequest->request("usertags/"+mediaId+"/remove/",signature.toUtf8());
     QObject::connect(removeSelftagRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(removeSelftagDone(QVariant)));
-}
+}*/
 
-void Instagram::postComment(QString mediaId, QString commentText)
+/*void Instagramv2::comment(QString mediaId, QString commentText)
 {
     InstagramRequest *postCommentRequest = new InstagramRequest();
     QJsonObject data;
@@ -379,7 +376,7 @@ void Instagram::postComment(QString mediaId, QString commentText)
     QObject::connect(postCommentRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(commentPosted(QVariant)));
 }
 
-void Instagram::deleteComment(QString mediaId, QString commentId, QString captionText)
+void Instagramv2::deleteComment(QString mediaId, QString commentId, QString captionText)
 {
     InstagramRequest *deleteCommentRequest = new InstagramRequest();
     QJsonObject data;
@@ -391,28 +388,28 @@ void Instagram::deleteComment(QString mediaId, QString commentId, QString captio
     QString signature = deleteCommentRequest->generateSignature(data);
     deleteCommentRequest->request("media/"+mediaId+"/comment/"+commentId+"/delete/",signature.toUtf8());
     QObject::connect(deleteCommentRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(commentDeleted(QVariant)));
-}
+}*/
 
 //FIXME changeProfilePicture is not public yeat. Give me few weeks to optimize code
-void Instagram::changeProfilePicture(QFile *photo)
-{
+//void Instagramv2::changeProfilePicture(QFile *photo)
+//{
 
-}
+//}
 
-void Instagram::removeProfilePicture()
+/*void Instagramv2::removeProfilePicture()
 {
     InstagramRequest *removeProfilePictureRequest = new InstagramRequest();
     QJsonObject data;
         data.insert("_uuid",        this->m_uuid);
         data.insert("_uid",         this->m_username_id);
-        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+this->m_token);
+        data.insert("_csrftoken",   this->m_token);
 
     QString signature = removeProfilePictureRequest->generateSignature(data);
-    removeProfilePictureRequest->request("maccounts/remove_profile_picture/",signature.toUtf8());
+    removeProfilePictureRequest->request("accounts/remove_profile_picture/",signature.toUtf8());
     QObject::connect(removeProfilePictureRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(profilePictureDeleted(QVariant)));
-}
+}*/
 
-void Instagram::setPrivateAccount()
+/*void Instagramv2::setPrivateAccount()
 {
     InstagramRequest *setPrivateRequest = new InstagramRequest();
     QJsonObject data;
@@ -425,7 +422,7 @@ void Instagram::setPrivateAccount()
     QObject::connect(setPrivateRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(setProfilePrivate(QVariant)));
 }
 
-void Instagram::setPublicAccount()
+void Instagramv2::setPublicAccount()
 {
     InstagramRequest *setPublicRequest = new InstagramRequest();
     QJsonObject data;
@@ -436,9 +433,9 @@ void Instagram::setPublicAccount()
     QString signature = setPublicRequest->generateSignature(data);
     setPublicRequest->request("accounts/set_public/",signature.toUtf8());
     QObject::connect(setPublicRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(setProfilePublic(QVariant)));
-}
+}*/
 
-void Instagram::getProfileData()
+/*void Instagramv2::getProfileData()
 {
     InstagramRequest *getProfileRequest = new InstagramRequest();
     QJsonObject data;
@@ -449,7 +446,7 @@ void Instagram::getProfileData()
     QString signature = getProfileRequest->generateSignature(data);
     getProfileRequest->request("accounts/current_user/?edit=true",signature.toUtf8());
     QObject::connect(getProfileRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(profileDataReady(QVariant)));
-}
+} */
 /**
  * Edit profile.
  *
@@ -464,7 +461,7 @@ void Instagram::getProfileData()
  * @param bool gender
  *   Gender. male = true , female = false
  */
-void Instagram::editProfile(QString url, QString phone, QString first_name, QString biography, QString email, bool gender)
+/*void Instagramv2::editProfile(QString url, QString phone, QString first_name, QString biography, QString email, bool gender)
 {
     InstagramRequest *editProfileRequest = new InstagramRequest();
     QString gen_string;
@@ -492,71 +489,71 @@ void Instagram::editProfile(QString url, QString phone, QString first_name, QStr
     QString signature = editProfileRequest->generateSignature(data);
     editProfileRequest->request("accounts/edit_profile/",signature.toUtf8());
     QObject::connect(editProfileRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(editDataReady(QVariant)));
-}
+}*/
 
-void Instagram::getUsernameInfo(QString usernameId)
+/*void Instagramv2::getUsernameInfo(QString usernameId)
 {
     InstagramRequest *getUsernameRequest = new InstagramRequest();
     getUsernameRequest->request("users/"+usernameId+"/info/",NULL);
     QObject::connect(getUsernameRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(usernameDataReady(QVariant)));
-}
+}*/
 
-void Instagram::getRecentActivity()
+/*void Instagramv2::getRecentActivity()
 {
     InstagramRequest *getRecentActivityRequest = new InstagramRequest();
     getRecentActivityRequest->request("news/inbox/?",NULL);
     QObject::connect(getRecentActivityRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(recentActivityDataReady(QVariant)));
-}
+}*/
 
-void Instagram::getFollowingRecentActivity()
+/*void Instagramv2::getFollowingRecentActivity()
 {
     InstagramRequest *getFollowingRecentRequest = new InstagramRequest();
-    getFollowingRecentRequest->request("news/?",NULL);
+    wingRecentRequest->request("news/?",NULL);
     QObject::connect(getFollowingRecentRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(followingRecentDataReady(QVariant)));
-}
+}*/
 
-void Instagram::getUserTags(QString usernameId)
+/*void Instagramv2::getUserTags(QString usernameId)
 {
     InstagramRequest *getUserTagsRequest = new InstagramRequest();
     getUserTagsRequest->request("usertags/"+usernameId+"/feed/?rank_token="+this->m_rank_token+"&ranked_content=true&",NULL);
     QObject::connect(getUserTagsRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(userTagsDataReady(QVariant)));
-}
+}*/
 
-void Instagram::tagFeed(QString tag)
+/*void Instagramv2::tagFeed(QString tag)
 {
     InstagramRequest *getTagFeedRequest = new InstagramRequest();
     getTagFeedRequest->request("feed/tag/"+tag+"/?rank_token="+this->m_rank_token+"&ranked_content=true&",NULL);
     QObject::connect(getTagFeedRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(tagFeedDataReady(QVariant)));
-}
+}*/
 
-void Instagram::userFeed(QString user)
+/*void Instagramv2::userFeed(QString user)
 {
     InstagramRequest *getUserFeedRequest = new InstagramRequest();
     getUserFeedRequest->request("users/search/?query="+user+"&is_typeahead=true&rank_token="+this->m_rank_token+"&",NULL);
     QObject::connect(getUserFeedRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(userFeedDataReady(QVariant)));
-}
+}*/
 
-void Instagram::exploreFeed(QString session_id)
+/*void Instagramv2::exploreFeed(QString session_id)
 {
     InstagramRequest *getExploreRequest = new InstagramRequest();
     getExploreRequest->request("discover/explore/?is_prefetch=false&is_from_promote=false&session_id=" + this->m_token +
-                               "&module=explore_popular&"
+                               "&module=explore_popular"
                                ,NULL);
     QObject::connect(getExploreRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(exploreDataReady(QVariant)));
-}
+} */
 
-void Instagram::storiesFeed(QString session_id)
+/*void Instagramv2::storiesFeed(QString session_id)
 {
     InstagramRequest *getStoriesRequest = new InstagramRequest();
     getStoriesRequest->request("feed/reels_tray/?"
                                ,NULL);
     QObject::connect(getStoriesRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(storiesDataReady(QVariant)));
-}
+}*/
 
 
-void Instagram::getTimeLine(QString max_id)
+/*void Instagramv2::getTimeLine(QString max_id)
 {
-    QString target ="feed/timeline/?rank_token="+this->m_rank_token+"&ranked_content=false&_uuid="+this->m_uuid;
+    QString target ="feed/timeline/?rank_token="+this->m_rank_token+"&ranked_content=true&";
 
     if(max_id.length() > 0)
     {
@@ -566,9 +563,9 @@ void Instagram::getTimeLine(QString max_id)
     InstagramRequest *getTimeLineRequest = new InstagramRequest();
     getTimeLineRequest->request(target,NULL);
     QObject::connect(getTimeLineRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(timeLineDataReady(QVariant)));
-}
+}*/
 
-void Instagram::getUsernameFeed(QString usernameID, QString maxid, QString minTimestamp)
+/*void Instagramv2::getUserFeed(QString usernameID, QString maxid, QString minTimestamp)
 {
     QString endpoint;
     endpoint = "feed/user/"+usernameID+"/?rank_token="+this->m_rank_token;
@@ -585,9 +582,9 @@ void Instagram::getUsernameFeed(QString usernameID, QString maxid, QString minTi
     InstagramRequest *getUserTimeLineRequest = new InstagramRequest();
     getUserTimeLineRequest->request(endpoint,NULL);
     QObject::connect(getUserTimeLineRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(userTimeLineDataReady(QVariant)));
-}
+} */
 
-void Instagram::getPopularFeed()
+void Instagramv2::getPopularFeed()
 {
     InstagramRequest *getPopularFeedRequest = new InstagramRequest();
     getPopularFeedRequest->request("feed/popular/?people_teaser_supported=1&rank_token="+this->m_rank_token+"&ranked_content=true&",NULL);
@@ -595,14 +592,14 @@ void Instagram::getPopularFeed()
 
 }
 
-void Instagram::getMediaLikers(QString mediaId)
+/*void Instagramv2::getMediaLikers(QString mediaId)
 {
     InstagramRequest *getMediaLikersRequest = new InstagramRequest();
     getMediaLikersRequest->request("media/"+mediaId+"/likers/?",NULL);
     QObject::connect(getMediaLikersRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(mediaLikersDataReady(QVariant)));
-}
+}*/
 
-void Instagram::like(QString mediaId)
+/*void Instagramv2::like(QString mediaId)
 {
     InstagramRequest *likeRequest = new InstagramRequest();
     QJsonObject data;
@@ -616,7 +613,7 @@ void Instagram::like(QString mediaId)
     QObject::connect(likeRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(likeDataReady(QVariant)));
 }
 
-void Instagram::unLike(QString mediaId)
+void Instagramv2::unLike(QString mediaId)
 {
     InstagramRequest *unLikeRequest = new InstagramRequest();
     QJsonObject data;
@@ -628,10 +625,10 @@ void Instagram::unLike(QString mediaId)
     QString signature = unLikeRequest->generateSignature(data);
     unLikeRequest->request("media/"+mediaId+"/unlike/",signature.toUtf8());
     QObject::connect(unLikeRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(unLikeDataReady(QVariant)));
-}
+}*/
 
 
-void Instagram::likeComment(QString commentId)
+/*void Instagramv2::likeComment(QString commentId)
 {
     InstagramRequest *likeCommentRequest = new InstagramRequest();
     QJsonObject data;
@@ -644,7 +641,7 @@ void Instagram::likeComment(QString commentId)
     QObject::connect(likeCommentRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(likeCommentDataReady(QVariant)));
 }
 
-void Instagram::unLikeComment(QString commentId)
+void Instagramv2::unlikeComment(QString commentId)
 {
     InstagramRequest *unLikeCommentRequest = new InstagramRequest();
     QJsonObject data;
@@ -655,16 +652,16 @@ void Instagram::unLikeComment(QString commentId)
     QString signature = unLikeCommentRequest->generateSignature(data);
     unLikeCommentRequest->request("media/"+commentId+"/like/",signature.toUtf8());
     QObject::connect(unLikeCommentRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(unLikeCommentDataReady(QVariant)));
-}
+}*/
 
-void Instagram::getMediaComments(QString mediaId)
+/*void Instagramv2::getMediaComments(QString mediaId)
 {
     InstagramRequest *getMediaCommentsRequest = new InstagramRequest();
     getMediaCommentsRequest->request("media/"+mediaId+"/comments/?",NULL);
     QObject::connect(getMediaCommentsRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(mediaCommentsDataReady(QVariant)));
-}
+}*/
 
-void Instagram::follow(QString userId)
+/*void Instagramv2::follow(QString userId)
 {
     InstagramRequest *followRequest = new InstagramRequest();
     QJsonObject data;
@@ -678,7 +675,7 @@ void Instagram::follow(QString userId)
     QObject::connect(followRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(followDataReady(QVariant)));
 }
 
-void Instagram::unFollow(QString userId)
+void Instagramv2::unFollow(QString userId)
 {
     InstagramRequest *unFollowRequest = new InstagramRequest();
     QJsonObject data;
@@ -690,9 +687,9 @@ void Instagram::unFollow(QString userId)
     QString signature = unFollowRequest->generateSignature(data);
     unFollowRequest->request("friendships/destroy/"+userId+"/",signature.toUtf8());
     QObject::connect(unFollowRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(unFollowDataReady(QVariant)));
-}
+}*/
 
-void Instagram::block(QString userId)
+/*void Instagramv2::block(QString userId)
 {
     InstagramRequest *blockRequest = new InstagramRequest();
     QJsonObject data;
@@ -706,7 +703,7 @@ void Instagram::block(QString userId)
     QObject::connect(blockRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(blockDataReady(QVariant)));
 }
 
-void Instagram::unBlock(QString userId)
+void Instagramv2::unBlock(QString userId)
 {
     InstagramRequest *unBlockRequest = new InstagramRequest();
     QJsonObject data;
@@ -718,9 +715,9 @@ void Instagram::unBlock(QString userId)
     QString signature = unBlockRequest->generateSignature(data);
     unBlockRequest->request("friendships/unblock/"+userId+"/",signature.toUtf8());
     QObject::connect(unBlockRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(unBlockDataReady(QVariant)));
-}
+} */
 
-void Instagram::userFriendship(QString userId)
+/*void Instagramv2::getFriendship(QString userId)
 {
     InstagramRequest *userFriendshipRequest = new InstagramRequest();
     QJsonObject data;
@@ -732,9 +729,9 @@ void Instagram::userFriendship(QString userId)
     QString signature = userFriendshipRequest->generateSignature(data);
     userFriendshipRequest->request("friendships/show/"+userId+"/",signature.toUtf8());
     QObject::connect(userFriendshipRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(userFriendshipDataReady(QVariant)));
-}
+}*/
 
-void Instagram::getLikedMedia(QString maxid)
+/*void Instagramv2::getLikedMedia(QString maxid)
 {
     InstagramRequest *getLikedMediaRequest = new InstagramRequest();
     if(maxid.length() == 0)
@@ -746,9 +743,9 @@ void Instagram::getLikedMedia(QString maxid)
         getLikedMediaRequest->request("feed/liked/?max_id="+maxid,NULL);
     }
     QObject::connect(getLikedMediaRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(likedMediaDataReady(QVariant)));
-}
+}*/
 
-void Instagram::getUserFollowings(QString userId, QString maxId)
+/*void Instagramv2::getFollowing(QString userId, QString max_id)
 {
     InstagramRequest *getUserFollowingsRequest = new InstagramRequest();
     QJsonObject data;
@@ -764,7 +761,7 @@ void Instagram::getUserFollowings(QString userId, QString maxId)
     QObject::connect(getUserFollowingsRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(userFollowingsDataReady(QVariant)));
 }
 
-void Instagram::getUserFollowers(QString userId, QString maxId)
+void Instagramv2::getFollowers(QString userId, QString max_id)
 {
     qDebug() << userId;
     InstagramRequest *getUserFollowersRequest = new InstagramRequest();
@@ -779,7 +776,7 @@ void Instagram::getUserFollowers(QString userId, QString maxId)
     QString signature = getUserFollowersRequest->generateSignature(data);
     getUserFollowersRequest->request("friendships/"+userId+"/followers/",signature.toUtf8());
     QObject::connect(getUserFollowersRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(userFollowersDataReady(QVariant)));
-}
+} */
 
 /*
  * Return json string
@@ -790,7 +787,7 @@ void Instagram::getUserFollowers(QString userId, QString maxId)
  *   "error":       STRING  Error string if aviable
  *   }
  */
-void Instagram::checkUsername(QString username)
+/*void Instagramv2::checkUsername(QString username)
 {
     InstagramRequest *checkUsernameRequest = new InstagramRequest();
     QJsonObject data;
@@ -801,7 +798,9 @@ void Instagram::checkUsername(QString username)
     QString signature = checkUsernameRequest->generateSignature(data);
     checkUsernameRequest->request("users/check_username/",signature.toUtf8());
     QObject::connect(checkUsernameRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(usernameCheckDataReady(QVariant)));
-}
+}*/
+
+
 /*
  * Return JSON string
  * {
@@ -817,7 +816,7 @@ void Instagram::checkUsername(QString username)
  *  }
  *
  */
-void Instagram::createAccount(QString username, QString password, QString email)
+/*void Instagramv2::createAccount(QString username, QString password, QString email)
 {
     InstagramRequest *createAccountRequest = new InstagramRequest();
     QJsonObject data;
@@ -835,37 +834,37 @@ void Instagram::createAccount(QString username, QString password, QString email)
     QString signature = createAccountRequest->generateSignature(data);
     createAccountRequest->request("accounts/create/",signature.toUtf8());
     QObject::connect(createAccountRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(createAccountDataReady(QVariant)));
-}
+}*/
 
-void Instagram::searchUsername(QString username)
+void Instagramv2::searchUsername(QString username)
 {
     InstagramRequest *searchUsernameRequest = new InstagramRequest();
     searchUsernameRequest->request("users/"+username+"/usernameinfo/", NULL);
     QObject::connect(searchUsernameRequest,SIGNAL(replySrtingReady(QVariant)), this, SIGNAL(searchUsernameDataReady(QVariant)));
 }
 
-void Instagram::getInbox()
+/*void Instagramv2::getInbox()
 {
     InstagramRequest *getInboxRequest = new InstagramRequest();
     getInboxRequest->request("direct_v2/inbox/", NULL);
     QObject::connect(getInboxRequest,SIGNAL(replySrtingReady(QVariant)), this, SIGNAL(getInboxDataReady(QVariant)));
 }
 
-void Instagram::getDirectThread(QString threadId)
+void Instagramv2::getDirectThread(QString threadId)
 {
     InstagramRequest *getDirectThreadRequest = new InstagramRequest();
     getDirectThreadRequest->request("direct_v2/threads/"+threadId+"/", NULL);
     QObject::connect(getDirectThreadRequest,SIGNAL(replySrtingReady(QVariant)), this, SIGNAL(getDirectThreadDataReady(QVariant)));
 }
 
-void Instagram::getPendingInbox()
+void Instagramv2::getPendingInbox()
 {
     InstagramRequest *getPendingInboxRequest = new InstagramRequest();
     getPendingInboxRequest->request("direct_v2/pending_inbox/", NULL);
     QObject::connect(getPendingInboxRequest,SIGNAL(replySrtingReady(QVariant)), this, SIGNAL(getPendingInboxDataReady(QVariant)));
 }
 
-void Instagram::getRecentRecipients()
+void Instagramv2::getRecentRecipients()
 {
     InstagramRequest *getRecentRecipientsRequest = new InstagramRequest();
     QJsonObject data;
@@ -877,9 +876,9 @@ void Instagram::getRecentRecipients()
     getRecentRecipientsRequest->request("direct_share/recent_recipients/", signature.toUtf8());
     QObject::connect(getRecentRecipientsRequest,SIGNAL(replySrtingReady(QVariant)), this, SIGNAL(getRecentRecipientsDataReady(QVariant)));
 
-}
+}*/
 
-void Instagram::rotateImg(QString filename, qreal deg)
+void Instagramv2::rotateImg(QString filename, qreal deg)
 {
     QImage image(filename);
     QTransform rot;
@@ -897,7 +896,7 @@ void Instagram::rotateImg(QString filename, qreal deg)
     imgFile.close();
 }
 
-void Instagram::cropImg(QString filename, bool squared)
+void Instagramv2::cropImg(QString filename, bool squared)
 {
 
     QImage image(filename);
@@ -929,7 +928,7 @@ void Instagram::cropImg(QString filename, bool squared)
     imgFile.close();
 }
 
-void Instagram::cropImg(QString in_filename, QString out_filename, int topSpace, bool squared)
+void Instagramv2::cropImg(QString in_filename, QString out_filename, int topSpace, bool squared)
 {
     QImage image(in_filename);
     int min_size = qMin(image.width(),image.height());
