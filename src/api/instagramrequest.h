@@ -15,12 +15,14 @@ public:
     void fileRquest(QString endpoint, QString boundary, QByteArray data);
     QString generateSignature(QJsonObject data);
     QString buildBody(QList<QList<QString> > bodies, QString boundary);
+    QString generateUUID(bool keepDashes = true);
+    int mt_rand(int min=0, int max=0xffff);
 
+    QString SIG_KEY_VERSION = "4";
+    QString IS_SIG_KEY = "b03e0daaf2ab17cda2a569cace938d639d1288a1197f9ecf97efd0a4ec0874d7";
 private:
     QString API_URL = "https://i.instagram.com/api/v1/";
-    QString USER_AGENT = "Instagram 10.15.0 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)";
-    QString IS_SIG_KEY = "b03e0daaf2ab17cda2a569cace938d639d1288a1197f9ecf97efd0a4ec0874d7";
-    QString SIG_KEY_VERSION = "4";
+    QString USER_AGENT = "Instagram 10.15.0 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)"; 
 
     QDir m_data_path;
 

@@ -10,6 +10,8 @@
 #include <QNetworkRequest>
 #include <QStandardPaths>
 #include <iostream>
+#include <stdlib.h>
+#include <time.h>
 
 
 
@@ -24,8 +26,7 @@ InstagramRequest::InstagramRequest(QObject *parent) : QObject(parent)
     {
         m_data_path.mkpath(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
     }
-
-
+    srand (time(NULL));
 }
 
 void InstagramRequest::fileRquest(QString endpoint, QString boundary, QByteArray data)
@@ -107,6 +108,7 @@ void InstagramRequest::finishGetUrl()
     {
         emit replySrtingReady(answer);
     }
+   this->m_manager->deleteLater();
 }
 
 void InstagramRequest::saveCookie()
@@ -138,4 +140,26 @@ QString InstagramRequest::generateSignature(QJsonObject data)
 
     return QString("ig_sig_key_version="+SIG_KEY_VERSION+"&signed_body="+hash.toHex()+"."+data_string.toUtf8());
 }
+
+int InstagramRequest::mt_rand(int min, int max){
+    return min+rand()%max;
+
+}
+
+QString InstagramRequest::generateUUID(bool keepDashes) {
+    QString uuid;
+
+    uuid.sprintf("%04x%04x-%04x-%04x-%04x-%04x%04x%04x",
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0x0fff) | 0x4000,
+            mt_rand(0, 0x3fff) | 0x8000,
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff)
+    );
+    return keepDashes ? uuid : uuid.replace("-", "");
+}
+
 
