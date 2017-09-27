@@ -26,7 +26,7 @@ void Instagramv2::getPendingInbox()
 void Instagramv2::getDirectThread(QString threadId, QString cursorId)
 {
     InstagramRequest *getDirectThreadRequest = new InstagramRequest();
-    getDirectThreadRequest->request("direct_v2/threads/"+threadId+"/"
+    getDirectThreadRequest->request("direct_v2/threads/"+threadId+"/?"
                                     "use_unified_inbox=true"+
                                     (cursorId.length()>0 ? "&cursor="+cursorId : "")
                                     , NULL);
