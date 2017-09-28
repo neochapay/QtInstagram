@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QDir>
 #include <QVariant>
+#include "instagramrequestv2.h"
 
 class Instagramv2 : public QObject
 {
@@ -252,6 +253,7 @@ private:
     bool m_isLoggedIn = false;
 
     QString generateDeviceId();
+    InstagramRequestv2 *requestGlobal;
 
 signals:
     void profileConnected(QVariant answer);
@@ -307,7 +309,7 @@ signals:
     void followingDataReady(QVariant answer);
     void followersDataReady(QVariant answer);
     void followDataReady(QVariant answer);
-    void unFollowDataReady(QVariant answer);
+    void unfollowDataReady(QVariant answer);
     void favoriteDataReady(QVariant answer);
     void unFavoriteDataReady(QVariant answer);
     void blockDataReady(QVariant answer);

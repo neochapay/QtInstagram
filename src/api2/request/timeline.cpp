@@ -1,10 +1,10 @@
 #include "../instagramv2.h"
-#include "../../api/instagramrequest.h"
+#include "../instagramrequestv2.h"
 #include <QJsonObject>
 
 void Instagramv2::getTimelineFeed(QString max_id)
 {
-    InstagramRequest *getTimeLineFeedRequest = new InstagramRequest();
+    InstagramRequestv2 *getTimeLineFeedRequest = new InstagramRequestv2();
 
     QJsonObject data;
     data.insert("_uuid",        m_uuid);
@@ -22,7 +22,7 @@ void Instagramv2::getTimelineFeed(QString max_id)
     // "feed/timeline/"
     getTimeLineFeedRequest->request(target,signature.toUtf8());
 
-    QObject::connect(getTimeLineFeedRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(timelineFeedDataReady(QVariant)));
+    QObject::connect(getTimeLineFeedRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(timelineFeedDataReady(QVariant)));
 }
 
 //getUserTimeLine
@@ -35,7 +35,7 @@ void Instagramv2::getUserFeed(QString userID, QString max_id, QString minTimesta
                      "&ranked_content=true";
 
 
-    InstagramRequest *getUserFeedRequest = new InstagramRequest();
+    InstagramRequestv2 *getUserFeedRequest = new InstagramRequestv2();
     getUserFeedRequest->request(target,NULL);
-    QObject::connect(getUserFeedRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(userFeedDataReady(QVariant)));
+    QObject::connect(getUserFeedRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(userFeedDataReady(QVariant)));
 }
