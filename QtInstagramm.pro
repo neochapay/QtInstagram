@@ -4,6 +4,8 @@ VERSION = 0.1
 
 QT += network
 
+CONFIG += no_keywords
+
 SOURCES += \
     src/api/instagram.cpp \
     src/api/instagramrequest.cpp \

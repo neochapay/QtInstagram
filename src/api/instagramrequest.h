@@ -28,12 +28,12 @@ private:
     QNetworkReply *m_reply;
     QNetworkCookieJar *m_jar;
 
-signals:
+Q_SIGNALS:
     void replySrtingReady(QVariant ans);
 
-public slots:
+public Q_SLOTS:
 
-private slots:
+private Q_SLOTS:
     void finishGetUrl();
     void saveCookie();
 };
