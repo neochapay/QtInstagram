@@ -11,7 +11,7 @@ class Instagramv2 : public QObject
 public:
     explicit Instagramv2(QObject *parent = 0);
 
-public slots:
+public Q_SLOTS:
     Q_INVOKABLE void login(bool forse = false);
     Q_INVOKABLE void logout();
 //Maked there
@@ -253,7 +253,7 @@ private:
 
     QString generateDeviceId();
 
-signals:
+Q_SIGNALS:
     void profileConnected(QVariant answer);
     void profileConnectedFail();
     void doLogout(QVariant answer);
@@ -334,7 +334,7 @@ signals:
     void userTagsDataReady(QVariant answer);
     void removeSelftagDone(QVariant answer);
 
-private slots:
+private Q_SLOTS:
     void setUser();
     void doLogin();
     void syncFeatures();
