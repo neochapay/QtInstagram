@@ -11,7 +11,7 @@ class Instagram : public QObject
 public:
     explicit Instagram(QObject *parent = 0);
 
-public slots:
+public Q_SLOTS:
     void login(bool forse = false);
     void logout();
 
@@ -109,7 +109,7 @@ private:
 
     QString generateDeviceId();
 
-signals:
+Q_SIGNALS:
     void profileConnected(QVariant answer);
     void profileConnectedFail();
 
@@ -175,7 +175,7 @@ signals:
     void getPendingInboxDataReady(QVariant answer);
     void getRecentRecipientsDataReady(QVariant answer);
 
-private slots:
+private Q_SLOTS:
     void setUser();
     void doLogin();
     void syncFeatures();
