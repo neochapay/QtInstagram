@@ -1,0 +1,3 @@
+#include "instagramv2.h"
+
+typedef Instagramv2 Instagram;
