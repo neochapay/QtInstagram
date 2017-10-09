@@ -6,12 +6,15 @@ QT += \
 equals(INSTAGRAM_API_VERSION, "v1") {
     BASE_DIR = $${PWD}/src/api
     SOURCES += \
+        $${BASE_DIR}/instagramrequest.cpp \
         $${BASE_DIR}/instagram.cpp
     HEADERS += \
+        $${BASE_DIR}/instagramrequest.h \
         $${BASE_DIR}/instagram.h
 } else {
     BASE_DIR = $${PWD}/src/api2
     SOURCES += \
+        $${BASE_DIR}/instagramrequestv2.cpp \
         $${BASE_DIR}/instagramv2.cpp \
         $${BASE_DIR}/request/account.cpp \
         $${BASE_DIR}/request/direct.cpp \
@@ -23,15 +26,14 @@ equals(INSTAGRAM_API_VERSION, "v1") {
         $${BASE_DIR}/request/timeline.cpp \
         $${BASE_DIR}/request/usertag.cpp
     HEADERS += \
-        $${BASE_DIR}/instagramv2.h \
+        $${BASE_DIR}/instagramrequestv2.h \
+        $${BASE_DIR}/instagramv2.h
 }
 
 SOURCES += \
-    $${PWD}/src/api/instagramrequest.cpp \
     $${PWD}/src/cripto/hmacsha.cpp
 
 HEADERS += \
-    $${PWD}/src/api/instagramrequest.h \
     $${PWD}/src/cripto/hmacsha.h
 
 INCLUDEPATH += \

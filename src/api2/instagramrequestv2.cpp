@@ -105,7 +105,7 @@ void InstagramRequestv2::finishGetUrl()
     QVariant answer = QString::fromUtf8(nReply->readAll());
     if(answer.toString().length() > 1)
     {
-        emit replyStringReady(answer);
+        Q_EMIT replyStringReady(answer);
     }
     connections.removeAll(nReply);
     nReply->deleteLater();

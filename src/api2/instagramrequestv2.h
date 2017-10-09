@@ -32,12 +32,12 @@ private:
     QNetworkCookieJar *m_jar;
     QList<QNetworkReply*> connections;
 
-signals:
+Q_SIGNALS:
     void replyStringReady(QVariant ans);
 
-public slots:
+public Q_SLOTS:
 
-private slots:
+private Q_SLOTS:
     void finishGetUrl();
     void saveCookie();
 };
