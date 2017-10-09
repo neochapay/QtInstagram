@@ -2,6 +2,7 @@
  * BASED ON https://github.com/mgp25/Instagram-API
  */
 #include "instagramv2.h"
+#include "instagramconstants.h"
 //#include "instagramrequestv2.h"
 
 #include <QCryptographicHash>
@@ -169,7 +170,7 @@ void Instagramv2::syncFeatures()
         data.insert("_uid",         m_username_id);
         data.insert("id",           m_username_id);
         data.insert("password",     m_password);
-        data.insert("experiments",  EXPERIMENTS);
+        data.insert("experiments",  Constants::experiments());
 
     QString signature = syncRequest->generateSignature(data);
     syncRequest->request("qe/sync/",signature.toUtf8());

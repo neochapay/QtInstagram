@@ -155,7 +155,7 @@ void Instagramv2::getComments(QString mediaId, QString max_id)
 {
     InstagramRequestv2 *getMediaCommentsRequest = new InstagramRequestv2();
     getMediaCommentsRequest->request("media/"+mediaId+"/comments/?"
-                                     "ig_sig_key_version="+ SIG_KEY_VERSION +
+                                     "ig_sig_key_version="+ Constants::sigKeyVersion() +
                                      (max_id.length()>0 ? "&max_id="+max_id : "")
                                      ,NULL);
     QObject::connect(getMediaCommentsRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(mediaCommentsDataReady(QVariant)));

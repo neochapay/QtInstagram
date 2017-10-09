@@ -75,7 +75,7 @@ void Instagramv2::searchUser(QString query)
                                 "query="+query+
                                 "&is_typeahead=true&"
                                 "rank_token="+m_rank_token+
-                                "&ig_sig_key_version="+SIG_KEY_VERSION
+                                "&ig_sig_key_version="+Constants::sigKeyVersion()
                                 ,NULL);
     QObject::connect(getSearchUserRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(searchUserDataReady(QVariant)));
 }

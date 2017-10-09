@@ -14,6 +14,7 @@ equals(INSTAGRAM_API_VERSION, "v1") {
 } else {
     BASE_DIR = $${PWD}/src/api2
     SOURCES += \
+        $${BASE_DIR}/instagramconstants.cpp \
         $${BASE_DIR}/instagramrequestv2.cpp \
         $${BASE_DIR}/instagramv2.cpp \
         $${BASE_DIR}/request/account.cpp \
@@ -26,6 +27,7 @@ equals(INSTAGRAM_API_VERSION, "v1") {
         $${BASE_DIR}/request/timeline.cpp \
         $${BASE_DIR}/request/usertag.cpp
     HEADERS += \
+        $${BASE_DIR}/instagramconstants.h \
         $${BASE_DIR}/instagramrequestv2.h \
         $${BASE_DIR}/instagramv2.h
 }

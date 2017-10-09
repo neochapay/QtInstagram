@@ -33,7 +33,7 @@ void InstagramRequestv2::fileRquest(QString endpoint, QString boundary, QByteArr
     f.open(QIODevice::ReadOnly);
     QDataStream s(&f);
 
-    QUrl url(API_URL+endpoint);
+    QUrl url(Constants::apiUrl()+endpoint);
     QNetworkRequest request(url);
 
     while(!s.atEnd()){
@@ -50,7 +50,7 @@ void InstagramRequestv2::fileRquest(QString endpoint, QString boundary, QByteArr
     request.setRawHeader("Accept","*/*");
     request.setHeader(QNetworkRequest::ContentTypeHeader,"multipart/form-data; boundary="+boundary.toUtf8());
     request.setHeader(QNetworkRequest::ContentLengthHeader,data.size());
-    request.setHeader(QNetworkRequest::UserAgentHeader,USER_AGENT);
+    request.setHeader(QNetworkRequest::UserAgentHeader,Constants::userAgent());
 
     request.setRawHeader("Cookie2","$Version=1");
     request.setRawHeader("Accept-Language","en-US");
@@ -70,7 +70,7 @@ void InstagramRequestv2::request(QString endpoint, QByteArray post)
     f.open(QIODevice::ReadOnly);
     QDataStream s(&f);
 
-    QUrl url(API_URL+endpoint);
+    QUrl url(Constants::apiUrl()+endpoint);
     QNetworkRequest request(url);
 
     while(!s.atEnd()){
@@ -88,7 +88,7 @@ void InstagramRequestv2::request(QString endpoint, QByteArray post)
     request.setRawHeader("Content-type","application/x-www-form-urlencoded; charset=UTF-8");
     request.setRawHeader("Cookie2","$Version=1");
     request.setRawHeader("Accept-Language","en-US");
-    request.setRawHeader("User-Agent",USER_AGENT.toUtf8());
+    request.setRawHeader("User-Agent",Constants::userAgent());
 
     this->m_manager->setCookieJar(this->m_jar);
     this->m_reply = this->m_manager->post(request,post);
@@ -114,7 +114,7 @@ void InstagramRequestv2::finishGetUrl()
 void InstagramRequestv2::saveCookie()
 {
     QList<QNetworkCookie> list =
-        m_manager->cookieJar()->cookiesForUrl(QUrl(API_URL+"/"));
+        m_manager->cookieJar()->cookiesForUrl(QUrl(Constants::apiUrl()+"/"));
 
     QFile f(m_data_path.absolutePath()+"/cookies.dat");
     f.open(QIODevice::ReadWrite);
@@ -136,8 +136,8 @@ QString InstagramRequestv2::generateSignature(QJsonObject data)
     data_string.replace("\"crop_center\":[0,0]","\"crop_center\":[0.0,-0.0]");
 
     HmacSHA *hmac = new HmacSHA();
-    QByteArray hash = hmac->hash(data_string.toUtf8(), IS_SIG_KEY.toUtf8());
+    QByteArray hash = hmac->hash(data_string.toUtf8(), Constants::isSigKey());
 
-    return QString("ig_sig_key_version="+SIG_KEY_VERSION+"&signed_body="+hash.toHex()+"."+data_string.toUtf8());
+    return QString("ig_sig_key_version="+Constants::sigKeyVersion()+"&signed_body="+hash.toHex()+"."+data_string.toUtf8());
 }
 
