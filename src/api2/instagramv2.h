@@ -2,23 +2,26 @@
 #define INSTAGRAMV2_H
 
 #include <QObject>
-#include <QDir>
+#include <QScopedPointer>
 #include <QVariant>
-#include "instagramrequestv2.h"
 
+class QFile;
+
+class Instagramv2Private;
 class Instagramv2 : public QObject
 {
     Q_OBJECT
 public:
     explicit Instagramv2(QObject *parent = 0);
+    ~Instagramv2();
 
 public Q_SLOTS:
     Q_INVOKABLE void login(bool forse = false);
     Q_INVOKABLE void logout();
 //Maked there
-    Q_INVOKABLE void setUsername(QString username){m_username = username;}
-    Q_INVOKABLE void setPassword(QString password){m_password = password;}
-    Q_INVOKABLE QString getUsernameId(){return m_username_id;}
+    Q_INVOKABLE void setUsername(QString username);
+    Q_INVOKABLE void setPassword(QString password);
+    Q_INVOKABLE QString getUsernameId();
 //End
 
     Q_INVOKABLE void postImage(QString path, QString caption, QString upload_id = "");
@@ -102,29 +105,6 @@ public Q_SLOTS:
     Q_INVOKABLE void removeSelftag(QString mediaId);
 
 
-private:
-    QString m_username;
-    QString m_password;
-    QString m_userID;
-    QString m_debug;
-    QString m_username_id;
-    QString m_uuid;
-    QString m_device_id;
-    QString m_token;
-    QString m_csrftoken=m_token;
-    QString m_rank_token;
-    QString m_IGDataPath;
-
-    QString m_caption;
-    QString m_image_path;
-
-    QDir m_data_path;
-
-    bool m_isLoggedIn = false;
-
-    QString generateDeviceId();
-    InstagramRequestv2 *requestGlobal;
-
 Q_SIGNALS:
     void profileConnected(QVariant answer);
     void profileConnectedFail();
@@ -206,12 +186,9 @@ Q_SIGNALS:
     void userTagsDataReady(QVariant answer);
     void removeSelftagDone(QVariant answer);
 
-private Q_SLOTS:
-    void setUser();
-    void doLogin();
-    void syncFeatures();
-    void profileConnect(QVariant profile);
-    void configurePhoto(QVariant answer);
+private:
+    Q_DECLARE_PRIVATE(Instagramv2)
+    QScopedPointer<Instagramv2Private> d_ptr;
 };
 
 #endif // INSTAGRAMV2_H

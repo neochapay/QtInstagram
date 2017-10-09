@@ -29,7 +29,8 @@ equals(INSTAGRAM_API_VERSION, "v1") {
     HEADERS += \
         $${BASE_DIR}/instagramconstants.h \
         $${BASE_DIR}/instagramrequestv2.h \
-        $${BASE_DIR}/instagramv2.h
+        $${BASE_DIR}/instagramv2.h \
+        $${BASE_DIR}/instagramv2_p.h
 }
 
 SOURCES += \
