@@ -1,88 +1,88 @@
 #include "../instagramv2.h"
-#include "../../api/instagramrequest.h"
+#include "../instagramrequestv2.h"
 #include <QJsonObject>
 
 void Instagramv2::getInfoByName(QString username)
 {
-    InstagramRequest *getInfoByNameRequest = new InstagramRequest();
+    InstagramRequestv2 *getInfoByNameRequest = new InstagramRequestv2();
     getInfoByNameRequest->request("users/"+username+"/usernameinfo/",NULL);
-    QObject::connect(getInfoByNameRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(infoByNameDataReady(QVariant)));
+    QObject::connect(getInfoByNameRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(infoByNameDataReady(QVariant)));
 }
 
 //old getUsernameInfo
 void Instagramv2::getInfoById(QString userId)
 {
-    InstagramRequest *getInfoByIdRequest = new InstagramRequest();
+    InstagramRequestv2 *getInfoByIdRequest = new InstagramRequestv2();
     getInfoByIdRequest->request("users/"+userId+"/info/"
                                 "?device_id="+m_device_id
                                 ,NULL);
-    QObject::connect(getInfoByIdRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(infoByIdDataReady(QVariant)));
+    QObject::connect(getInfoByIdRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(infoByIdDataReady(QVariant)));
 }
 
 //old getRecentActivity
 void Instagramv2::getRecentActivityInbox()
 {
-    InstagramRequest *getRecentActivityInboxRequest = new InstagramRequest();
+    InstagramRequestv2 *getRecentActivityInboxRequest = new InstagramRequestv2();
     getRecentActivityInboxRequest->request("news/inbox/?"
                                       "activity_module=all&"
                                       "show_su=true"
                                       ,NULL);
-    QObject::connect(getRecentActivityInboxRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(recentActivityInboxDataReady(QVariant)));
+    QObject::connect(getRecentActivityInboxRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(recentActivityInboxDataReady(QVariant)));
 }
 
 void Instagramv2::getFollowingRecentActivity()
 {
-    InstagramRequest *getFollowingRecentActivityRequest = new InstagramRequest();
+    InstagramRequestv2 *getFollowingRecentActivityRequest = new InstagramRequestv2();
     getFollowingRecentActivityRequest->request("news/?",NULL);
-    QObject::connect(getFollowingRecentActivityRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(followingRecentActivityDataReady(QVariant)));
+    QObject::connect(getFollowingRecentActivityRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(followingRecentActivityDataReady(QVariant)));
 }
 
 void Instagramv2::getFriendship(QString userId)
 {
-    InstagramRequest *getFriendshipRequest = new InstagramRequest();
+    InstagramRequestv2 *getFriendshipRequest = new InstagramRequestv2();
 
     getFriendshipRequest->request("friendships/show/"+userId+"/",NULL);
-    QObject::connect(getFriendshipRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(friendshipDataReady(QVariant)));
+    QObject::connect(getFriendshipRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(friendshipDataReady(QVariant)));
 }
 
 void Instagramv2::getFollowing(QString userId, QString max_id, QString searchQuery)
 {
-    InstagramRequest *getFollowingRequest = new InstagramRequest();
+    InstagramRequestv2 *getFollowingRequest = new InstagramRequestv2();
     getFollowingRequest->request("friendships/"+userId+"/following/?"
                                  "rank_token="+m_rank_token +
                                  (max_id.length()>0 ? "&max_id="+max_id : "") +
                                  (searchQuery.length()>0 ? "&query="+searchQuery : "")
                                   ,NULL);
-    QObject::connect(getFollowingRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(followingDataReady(QVariant)));
+    QObject::connect(getFollowingRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(followingDataReady(QVariant)));
 }
 
 void Instagramv2::getFollowers(QString userId, QString max_id, QString searchQuery)
 {
-    InstagramRequest *getFollowersRequest = new InstagramRequest();
-    getFollowersRequest->request("friendships/"+userId+"/followers/"
+    InstagramRequestv2 *getFollowersRequest = new InstagramRequestv2();
+    getFollowersRequest->request("friendships/"+userId+"/followers/?"
                                  "rank_token="+m_rank_token +
                                  (max_id.length()>0 ? "&max_id="+max_id : "") +
                                  (searchQuery.length()>0 ? "&query="+searchQuery : "")
                                  ,NULL);
-    QObject::connect(getFollowersRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(followersDataReady(QVariant)));
+    QObject::connect(getFollowersRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(followersDataReady(QVariant)));
 }
 
 //userFeed
 void Instagramv2::searchUser(QString query)
 {
-    InstagramRequest *getSearchUserRequest = new InstagramRequest();
+    InstagramRequestv2 *getSearchUserRequest = new InstagramRequestv2();
     getSearchUserRequest->request("users/search/?"
                                 "query="+query+
                                 "&is_typeahead=true&"
                                 "rank_token="+m_rank_token+
                                 "&ig_sig_key_version="+SIG_KEY_VERSION
                                 ,NULL);
-    QObject::connect(getSearchUserRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(searchUserDataReady(QVariant)));
+    QObject::connect(getSearchUserRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(searchUserDataReady(QVariant)));
 }
 
 void Instagramv2::follow(QString userId)
 {
-    InstagramRequest *followRequest = new InstagramRequest();
+    InstagramRequestv2 *followRequest = new InstagramRequestv2();
     QJsonObject data;
     data.insert("_uuid",        m_uuid);
     data.insert("_uid",         m_username_id);
@@ -93,12 +93,12 @@ void Instagramv2::follow(QString userId)
 
     followRequest->request("friendships/create/"+userId+"/"
                            ,signature.toUtf8());
-    QObject::connect(followRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(followDataReady(QVariant)));
+    QObject::connect(followRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(followDataReady(QVariant)));
 }
 
 void Instagramv2::unFollow(QString userId)
 {
-    InstagramRequest *unFollowRequest = new InstagramRequest();
+    InstagramRequestv2 *unFollowRequest = new InstagramRequestv2();
     QJsonObject data;
     data.insert("_uuid",        m_uuid);
     data.insert("_uid",         m_username_id);
@@ -109,12 +109,12 @@ void Instagramv2::unFollow(QString userId)
 
     unFollowRequest->request("friendships/destroy/"+userId+"/"
                              ,signature.toUtf8());
-    QObject::connect(unFollowRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(unFollowDataReady(QVariant)));
+    QObject::connect(unFollowRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(unfollowDataReady(QVariant)));
 }
 
 void Instagramv2::favorite(QString userId)
 {
-    InstagramRequest *favoriteRequest = new InstagramRequest();
+    InstagramRequestv2 *favoriteRequest = new InstagramRequestv2();
     QJsonObject data;
     data.insert("_uuid",        m_uuid);
     data.insert("_uid",         m_username_id);
@@ -123,12 +123,12 @@ void Instagramv2::favorite(QString userId)
 
     favoriteRequest->request("friendships/favorite/"+userId+"/"
                              ,signature.toUtf8());
-    QObject::connect(favoriteRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(favoriteDataReady(QVariant)));
+    QObject::connect(favoriteRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(favoriteDataReady(QVariant)));
 }
 
 void Instagramv2::unFavorite(QString userId)
 {
-    InstagramRequest *unFavoriteRequest = new InstagramRequest();
+    InstagramRequestv2 *unFavoriteRequest = new InstagramRequestv2();
     QJsonObject data;
     data.insert("_uuid",        m_uuid);
     data.insert("_uid",         m_username_id);
@@ -137,12 +137,12 @@ void Instagramv2::unFavorite(QString userId)
 
     unFavoriteRequest->request("friendships/unfavorite/"+userId+"/"
                              ,signature.toUtf8());
-    QObject::connect(unFavoriteRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(unFavoriteDataReady(QVariant)));
+    QObject::connect(unFavoriteRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(unFavoriteDataReady(QVariant)));
 }
 
 void Instagramv2::block(QString userId)
 {
-    InstagramRequest *blockRequest = new InstagramRequest();
+    InstagramRequestv2 *blockRequest = new InstagramRequestv2();
     QJsonObject data;
     data.insert("_uuid",        m_uuid);
     data.insert("_uid",         m_username_id);
@@ -151,12 +151,12 @@ void Instagramv2::block(QString userId)
     QString signature = blockRequest->generateSignature(data);
     blockRequest->request("friendships/block/" + userId + "/?"
                           ,signature.toUtf8());
-    QObject::connect(blockRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(blockDataReady(QVariant)));
+    QObject::connect(blockRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(blockDataReady(QVariant)));
 }
 
 void Instagramv2::unBlock(QString userId)
 {
-    InstagramRequest *unBlockRequest = new InstagramRequest();
+    InstagramRequestv2 *unBlockRequest = new InstagramRequestv2();
     QJsonObject data;
     data.insert("_uuid",        m_uuid);
     data.insert("_uid",         m_username_id);
@@ -166,15 +166,15 @@ void Instagramv2::unBlock(QString userId)
     QString signature = unBlockRequest->generateSignature(data);
     unBlockRequest->request("friendships/unblock/" + userId + "/"
                             ,signature.toUtf8());
-    QObject::connect(unBlockRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(unBlockDataReady(QVariant)));
+    QObject::connect(unBlockRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(unBlockDataReady(QVariant)));
 }
 
 void Instagramv2::getSugestedUser(QString userId) {
-    InstagramRequest *getSuggestedRequest = new InstagramRequest();
+    InstagramRequestv2 *getSuggestedRequest = new InstagramRequestv2();
 
 
     getSuggestedRequest->request("discover/chaining/?"
                                  "target_id="+userId
                              ,NULL);
-    QObject::connect(getSuggestedRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(suggestedUserDataReady(QVariant)));
+    QObject::connect(getSuggestedRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(suggestedUserDataReady(QVariant)));
 }

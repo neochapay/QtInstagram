@@ -1,5 +1,5 @@
 #include "../instagramv2.h"
-#include "../../api/instagramrequest.h"
+#include "../instagramrequestv2.h"
 #include <QJsonObject>
 
 void Instagramv2::changeProfilePicture(QFile *photo)
@@ -9,7 +9,7 @@ void Instagramv2::changeProfilePicture(QFile *photo)
 
 void Instagramv2::removeProfilePicture()
 {
-    InstagramRequest *removeProfilePictureRequest = new InstagramRequest();
+    InstagramRequestv2 *removeProfilePictureRequest = new InstagramRequestv2();
     QJsonObject data;
         data.insert("_uuid",        m_uuid);
         data.insert("_uid",         m_username_id);
@@ -17,12 +17,12 @@ void Instagramv2::removeProfilePicture()
 
     QString signature = removeProfilePictureRequest->generateSignature(data);
     removeProfilePictureRequest->request("accounts/remove_profile_picture/",signature.toUtf8());
-    QObject::connect(removeProfilePictureRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(profilePictureDeleted(QVariant)));
+    QObject::connect(removeProfilePictureRequest,&InstagramRequestv2::replyStringReady,this,&Instagramv2::profilePictureDeleted);
 }
 
 void Instagramv2::setPrivateAccount()
 {
-    InstagramRequest *setPrivateRequest = new InstagramRequest();
+    InstagramRequestv2 *setPrivateRequest = new InstagramRequestv2();
     QJsonObject data;
         data.insert("_uuid",        m_uuid);
         data.insert("_uid",         m_username_id);
@@ -30,12 +30,12 @@ void Instagramv2::setPrivateAccount()
 
     QString signature = setPrivateRequest->generateSignature(data);
     setPrivateRequest->request("accounts/set_private/",signature.toUtf8());
-    QObject::connect(setPrivateRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(setProfilePrivate(QVariant)));
+    QObject::connect(setPrivateRequest,&InstagramRequestv2::replyStringReady,this,&Instagramv2::setProfilePrivate);
 }
 
 void Instagramv2::setPublicAccount()
 {
-    InstagramRequest *setPublicRequest = new InstagramRequest();
+    InstagramRequestv2 *setPublicRequest = new InstagramRequestv2();
     QJsonObject data;
         data.insert("_uuid",        m_uuid);
         data.insert("_uid",         m_username_id);
@@ -43,13 +43,13 @@ void Instagramv2::setPublicAccount()
 
     QString signature = setPublicRequest->generateSignature(data);
     setPublicRequest->request("accounts/set_public/",signature.toUtf8());
-    QObject::connect(setPublicRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(setProfilePublic(QVariant)));
+    QObject::connect(setPublicRequest,&InstagramRequestv2::replyStringReady,this,&Instagramv2::setProfilePublic);
 }
 
 //getProfileData
 void Instagramv2::getCurrentUser()
 {
-    InstagramRequest *getCurrentUserRequest = new InstagramRequest();
+    InstagramRequestv2 *getCurrentUserRequest = new InstagramRequestv2;
     QJsonObject data;
         data.insert("_uuid",        m_uuid);
         data.insert("_uid",         m_username_id);
@@ -59,7 +59,7 @@ void Instagramv2::getCurrentUser()
     getCurrentUserRequest->request("accounts/current_user/?"
                                    "edit=true"
                                    ,signature.toUtf8());
-    QObject::connect(getCurrentUserRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(currentUserDataReady(QVariant)));
+    QObject::connect(getCurrentUserRequest,&InstagramRequestv2::replyStringReady,this,&Instagramv2::currentUserDataReady);
 }
 
 /**
@@ -81,7 +81,7 @@ void Instagramv2::editProfile(QString url, QString phone, QString first_name, QS
 
     getCurrentUser();
 
-    InstagramRequest *editProfileRequest = new InstagramRequest();
+    InstagramRequestv2 *editProfileRequest = new InstagramRequestv2();
     QString gen_string;
     if(gender)
     {
@@ -108,7 +108,7 @@ void Instagramv2::editProfile(QString url, QString phone, QString first_name, QS
     editProfileRequest->request("accounts/edit_profile/?"
                                 "edit=true"
                                 ,signature.toUtf8());
-    QObject::connect(editProfileRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(editDataReady(QVariant)));
+    QObject::connect(editProfileRequest,&InstagramRequestv2::replyStringReady,this,&Instagramv2::editDataReady);
 }
 
 /*
@@ -122,7 +122,7 @@ void Instagramv2::editProfile(QString url, QString phone, QString first_name, QS
  */
 void Instagramv2::checkUsername(QString username)
 {
-    InstagramRequest *checkUsernameRequest = new InstagramRequest();
+    InstagramRequestv2 *checkUsernameRequest = new InstagramRequestv2();
     QJsonObject data;
         data.insert("_uuid",        m_uuid);
         data.insert("_csrftoken",   QString("missing"));
@@ -131,7 +131,7 @@ void Instagramv2::checkUsername(QString username)
 
     QString signature = checkUsernameRequest->generateSignature(data);
     checkUsernameRequest->request("users/check_username/",signature.toUtf8());
-    QObject::connect(checkUsernameRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(usernameCheckDataReady(QVariant)));
+    QObject::connect(checkUsernameRequest,&InstagramRequestv2::replyStringReady,this,&Instagramv2::usernameCheckDataReady);
 }
 
 /*
@@ -151,7 +151,7 @@ void Instagramv2::checkUsername(QString username)
  */
 void Instagramv2::createAccount(QString username, QString password, QString email)
 {
-    InstagramRequest *createAccountRequest = new InstagramRequest();
+    InstagramRequestv2 *createAccountRequest = new InstagramRequestv2();
     QJsonObject data;
         data.insert("_uuid",               m_uuid);
         data.insert("_csrftoken",          QString("missing"));
@@ -166,5 +166,5 @@ void Instagramv2::createAccount(QString username, QString password, QString emai
 
     QString signature = createAccountRequest->generateSignature(data);
     createAccountRequest->request("accounts/create/",signature.toUtf8());
-    QObject::connect(createAccountRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(createAccountDataReady(QVariant)));
+    QObject::connect(createAccountRequest,&InstagramRequestv2::replyStringReady,this,&Instagramv2::createAccountDataReady);
 }
