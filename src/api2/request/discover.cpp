@@ -1,10 +1,10 @@
 #include "../instagramv2.h"
-#include "../../api/instagramrequest.h"
+#include "../instagramrequestv2.h"
 #include <QJsonObject>
 
 void Instagramv2::getExploreFeed(QString max_id, QString isPrefetch)
 {
-    InstagramRequest *getExploreRequest = new InstagramRequest();
+    InstagramRequestv2 *getExploreRequest = new InstagramRequestv2();
     getExploreRequest->request("discover/explore/?"
                                "is_prefetch="+isPrefetch+"&"
                                "is_from_promote=false&"
@@ -12,5 +12,5 @@ void Instagramv2::getExploreFeed(QString max_id, QString isPrefetch)
                                "&module=explore_popular" +
                                (max_id.length()>0 ? "&max_id="+max_id : "" )
                                ,NULL);
-    QObject::connect(getExploreRequest,SIGNAL(replySrtingReady(QVariant)),this,SIGNAL(exploreFeedDataReady(QVariant)));
+    QObject::connect(getExploreRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(exploreFeedDataReady(QVariant)));
 }

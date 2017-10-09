@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QDir>
 #include <QVariant>
+#include "instagramrequestv2.h"
 
 class Instagramv2 : public QObject
 {
@@ -11,7 +12,7 @@ class Instagramv2 : public QObject
 public:
     explicit Instagramv2(QObject *parent = 0);
 
-public slots:
+public Q_SLOTS:
     Q_INVOKABLE void login(bool forse = false);
     Q_INVOKABLE void logout();
 //Maked there
@@ -252,8 +253,9 @@ private:
     bool m_isLoggedIn = false;
 
     QString generateDeviceId();
+    InstagramRequestv2 *requestGlobal;
 
-signals:
+Q_SIGNALS:
     void profileConnected(QVariant answer);
     void profileConnectedFail();
     void doLogout(QVariant answer);
@@ -307,7 +309,7 @@ signals:
     void followingDataReady(QVariant answer);
     void followersDataReady(QVariant answer);
     void followDataReady(QVariant answer);
-    void unFollowDataReady(QVariant answer);
+    void unfollowDataReady(QVariant answer);
     void favoriteDataReady(QVariant answer);
     void unFavoriteDataReady(QVariant answer);
     void blockDataReady(QVariant answer);
@@ -334,7 +336,7 @@ signals:
     void userTagsDataReady(QVariant answer);
     void removeSelftagDone(QVariant answer);
 
-private slots:
+private Q_SLOTS:
     void setUser();
     void doLogin();
     void syncFeatures();

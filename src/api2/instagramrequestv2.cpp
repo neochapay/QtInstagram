@@ -1,4 +1,4 @@
-#include "instagramrequest.h"
+#include "instagramrequestv2.h"
 #include "../cripto/hmacsha.h"
 
 #include <QDataStream>
@@ -12,7 +12,7 @@
 
 
 
-InstagramRequest::InstagramRequest(QObject *parent) : QObject(parent)
+InstagramRequestv2::InstagramRequestv2(QObject *parent) : QObject(parent)
 {
     this->m_data_path =  QDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
 
@@ -23,11 +23,11 @@ InstagramRequest::InstagramRequest(QObject *parent) : QObject(parent)
     {
         m_data_path.mkpath(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
     }
-
-
 }
 
-void InstagramRequest::fileRquest(QString endpoint, QString boundary, QByteArray data)
+
+
+void InstagramRequestv2::fileRquest(QString endpoint, QString boundary, QByteArray data)
 {
     QFile f(m_data_path.absolutePath()+"/cookies.dat");
     f.open(QIODevice::ReadOnly);
@@ -57,13 +57,14 @@ void InstagramRequest::fileRquest(QString endpoint, QString boundary, QByteArray
     request.setRawHeader("Accept-Encoding","gzip");
 
     this->m_manager->setCookieJar(this->m_jar);
-    this->m_reply = this->m_manager->post(request,data);
+    QNetworkReply *mReply = this->m_manager->post(request,data);
 
-    QObject::connect(this->m_reply, SIGNAL(finished()), this, SLOT(finishGetUrl()));
-    QObject::connect(this->m_manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(saveCookie()));
+
+    QObject::connect(mReply, &QNetworkReply::finished, this, &InstagramRequestv2::finishGetUrl);
+    QObject::connect(this->m_manager, &QNetworkAccessManager::finished, this, &InstagramRequestv2::saveCookie);
 }
 
-void InstagramRequest::request(QString endpoint, QByteArray post)
+void InstagramRequestv2::request(QString endpoint, QByteArray post)
 {
     QFile f(m_data_path.absolutePath()+"/cookies.dat");
     f.open(QIODevice::ReadOnly);
@@ -91,22 +92,26 @@ void InstagramRequest::request(QString endpoint, QByteArray post)
 
     this->m_manager->setCookieJar(this->m_jar);
     this->m_reply = this->m_manager->post(request,post);
+    connections<<m_reply;
 
-    QObject::connect(this->m_reply, SIGNAL(finished()), this, SLOT(finishGetUrl()));
-    QObject::connect(this->m_manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(saveCookie()));
+    QObject::connect(this->m_reply, &QNetworkReply::finished, this, &InstagramRequestv2::finishGetUrl);
+    QObject::connect(this->m_manager, &QNetworkAccessManager::finished, this, &InstagramRequestv2::saveCookie);
 }
 
-void InstagramRequest::finishGetUrl()
+void InstagramRequestv2::finishGetUrl()
 {
-    this->m_reply->deleteLater();
-    QVariant answer = QString::fromUtf8(this->m_reply->readAll());
+    //this->m_reply->deleteLater();
+    QNetworkReply *nReply = qobject_cast<QNetworkReply *>(sender());
+    QVariant answer = QString::fromUtf8(nReply->readAll());
     if(answer.toString().length() > 1)
     {
-        Q_EMIT replySrtingReady(answer);
+        emit replyStringReady(answer);
     }
+    connections.removeAll(nReply);
+    nReply->deleteLater();
 }
 
-void InstagramRequest::saveCookie()
+void InstagramRequestv2::saveCookie()
 {
     QList<QNetworkCookie> list =
         m_manager->cookieJar()->cookiesForUrl(QUrl(API_URL+"/"));
@@ -122,7 +127,7 @@ void InstagramRequest::saveCookie()
 }
 
 
-QString InstagramRequest::generateSignature(QJsonObject data)
+QString InstagramRequestv2::generateSignature(QJsonObject data)
 {
     QJsonDocument data_doc(data);
     QString data_string(data_doc.toJson(QJsonDocument::Compact));

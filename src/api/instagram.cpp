@@ -60,7 +60,7 @@ void Instagram::setUser()
 {
     if(this->m_username.length() == 0 or this->m_password.length() == 0)
     {
-        emit error("Username and/or password is clean");
+        Q_EMIT error("Username and/or password is clean");
     }
     else
     {
@@ -114,7 +114,7 @@ void Instagram::doLogin()
     QFile f(m_data_path.absolutePath()+"/cookies.dat");
     if (!f.open(QFile::ReadOnly))
     {
-        emit error("Can`t open token file");
+        Q_EMIT error("Can`t open token file");
     }
     QTextStream in(&f);
     rx.indexIn(in.readAll());
@@ -124,7 +124,7 @@ void Instagram::doLogin()
     }
     else
     {
-        emit error("Can`t find token");
+        Q_EMIT error("Can`t find token");
     }
     QUuid uuid;
 
@@ -149,8 +149,8 @@ void Instagram::profileConnect(QVariant profile)
     QJsonObject profile_obj = profile_doc.object();
     if(profile_obj["status"].toString().toUtf8() == "fail")
     {
-        emit error(profile_obj["message"].toString().toUtf8());
-        emit profileConnectedFail();
+        Q_EMIT error(profile_obj["message"].toString().toUtf8());
+        Q_EMIT profileConnectedFail();
     }
     else
     {
@@ -165,7 +165,7 @@ void Instagram::profileConnect(QVariant profile)
 
         this->syncFeatures();
 
-        emit profileConnected(profile);
+        Q_EMIT profileConnected(profile);
     }
 }
 
@@ -194,7 +194,7 @@ void Instagram::postImage(QString path, QString caption, QString upload_id)
     QFile image(path);
     if(!image.open(QIODevice::ReadOnly))
     {
-        emit error("Image not found");
+        Q_EMIT error("Image not found");
     }
 
     QByteArray dataStream = image.readAll();
@@ -246,14 +246,14 @@ void Instagram::configurePhoto(QVariant answer)
     QJsonObject jsonObject = jsonResponse.object();
     if(jsonObject["status"].toString() != QString("ok"))
     {
-        emit error(jsonObject["message"].toString());
+        Q_EMIT error(jsonObject["message"].toString());
     }
     else
     {
         QString upload_id = jsonObject["upload_id"].toString();
         if(upload_id.length() == 0)
         {
-            emit error("Wrong UPLOAD_ID:"+upload_id);
+            Q_EMIT error("Wrong UPLOAD_ID:"+upload_id);
         }
         else
         {
