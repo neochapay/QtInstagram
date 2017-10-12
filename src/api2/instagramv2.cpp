@@ -1,7 +1,8 @@
 /*
  * BASED ON https://github.com/mgp25/Instagram-API
  */
-#include "instagramv2.h"
+#include "instagramv2_p.h"
+#include "instagramconstants.h"
 //#include "instagramrequestv2.h"
 
 #include <QCryptographicHash>
@@ -16,10 +17,10 @@
 #include <QDataStream>
 #include <QDebug>
 
-Instagramv2::Instagramv2(QObject *parent)
-    : QObject(parent)
+Instagramv2Private::Instagramv2Private(Instagramv2 *q):
+    q_ptr(q)
 {
-    m_data_path =  QDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
+    m_data_path = QDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
 
     if(!m_data_path.exists())
     {
@@ -34,7 +35,7 @@ Instagramv2::Instagramv2(QObject *parent)
     setUser();
 }
 
-QString Instagramv2::generateDeviceId()
+QString Instagramv2Private::generateDeviceId()
 {
     QFileInfo fi(m_data_path.absolutePath());
     QByteArray volatile_seed = QString::number(fi.created().toMSecsSinceEpoch()).toUtf8();
@@ -52,11 +53,13 @@ QString Instagramv2::generateDeviceId()
     return data;
 }
 
-void Instagramv2::setUser()
+void Instagramv2Private::setUser()
 {
+    Q_Q(Instagramv2);
+
     if(m_username.length() == 0 || m_password.length() == 0)
     {
-        Q_EMIT error("Username and/or password is clean");
+        Q_EMIT q->error("Username and/or password is clean");
     }
     else
     {
@@ -75,22 +78,36 @@ void Instagramv2::setUser()
     }
 }
 
+Instagramv2::Instagramv2(QObject *parent):
+    QObject(parent),
+    d_ptr(new Instagramv2Private(this))
+{
+}
+
+Instagramv2::~Instagramv2()
+{
+}
+
 void Instagramv2::login(bool forse)
 {
-    if(!m_isLoggedIn or forse)
+    Q_D(Instagramv2);
+
+    if(!d->m_isLoggedIn or forse)
     {
-        setUser();
+        d->setUser();
         InstagramRequestv2 *loginRequest = new InstagramRequestv2();
-        loginRequest->request("si/fetch_headers/?challenge_type=signup&guid="+m_uuid,NULL);
-        QObject::connect(loginRequest,&InstagramRequestv2::replyStringReady,this,&Instagramv2::doLogin);
+        loginRequest->request("si/fetch_headers/?challenge_type=signup&guid="+d->m_uuid,NULL);
+        QObject::connect(loginRequest,&InstagramRequestv2::replyStringReady,d,&Instagramv2Private::doLogin);
     }
 }
 
 void Instagramv2::logout()
 {
-    QFile f_cookie(m_data_path.absolutePath()+"/cookies.dat");
-    QFile f_userId(m_data_path.absolutePath()+"/userId.dat");
-    QFile f_token(m_data_path.absolutePath()+"/token.dat");
+    Q_D(Instagramv2);
+
+    QFile f_cookie(d->m_data_path.absolutePath()+"/cookies.dat");
+    QFile f_userId(d->m_data_path.absolutePath()+"/userId.dat");
+    QFile f_token(d->m_data_path.absolutePath()+"/token.dat");
 
     f_cookie.remove();
     f_userId.remove();
@@ -101,14 +118,34 @@ void Instagramv2::logout()
     QObject::connect(looutRequest,&InstagramRequestv2::replyStringReady,this,&Instagramv2::doLogout);
 }
 
-void Instagramv2::doLogin()
+void Instagramv2::setUsername(QString username)
 {
+    Q_D(Instagramv2);
+    d->m_username = username;
+}
+
+void Instagramv2::setPassword(QString password)
+{
+    Q_D(Instagramv2);
+    d->m_password = password;
+}
+
+QString Instagramv2::getUsernameId()
+{
+    Q_D(Instagramv2);
+    return d->m_username_id;
+}
+
+void Instagramv2Private::doLogin()
+{
+    Q_Q(Instagramv2);
+
     InstagramRequestv2 *request = new InstagramRequestv2();
     QRegExp rx("token=(\\w+);");
     QFile f(m_data_path.absolutePath()+"/cookies.dat");
     if (!f.open(QFile::ReadOnly))
     {
-        Q_EMIT error("Can`t open token file");
+        Q_EMIT q->error("Can`t open token file");
     }
     QTextStream in(&f);
     rx.indexIn(in.readAll());
@@ -118,7 +155,7 @@ void Instagramv2::doLogin()
     }
     else
     {
-        Q_EMIT error("Can`t find token");
+        Q_EMIT q->error("Can`t find token");
     }
     QUuid uuid;
 
@@ -134,17 +171,18 @@ void Instagramv2::doLogin()
     QString signature = request->generateSignature(data);
     request->request("accounts/login/",signature.toUtf8());
 
-    QObject::connect(request,&InstagramRequestv2::replyStringReady,this,&Instagramv2::profileConnect);
+    QObject::connect(request,&InstagramRequestv2::replyStringReady,this,&Instagramv2Private::profileConnect);
 }
 
-void Instagramv2::profileConnect(QVariant profile)
+void Instagramv2Private::profileConnect(QVariant profile)
 {
+    Q_Q(Instagramv2);
     QJsonDocument profile_doc = QJsonDocument::fromJson(profile.toString().toUtf8());
     QJsonObject profile_obj = profile_doc.object();
     if(profile_obj["status"].toString().toUtf8() == "fail")
     {
-        Q_EMIT error(profile_obj["message"].toString().toUtf8());
-        Q_EMIT profileConnectedFail();
+        Q_EMIT q->error(profile_obj["message"].toString().toUtf8());
+        Q_EMIT q->profileConnectedFail();
     }
     else
     {
@@ -156,11 +194,11 @@ void Instagramv2::profileConnect(QVariant profile)
 
         syncFeatures();
 
-        Q_EMIT profileConnected(profile);
+        Q_EMIT q->profileConnected(profile);
     }
 }
 
-void Instagramv2::syncFeatures()
+void Instagramv2Private::syncFeatures()
 {
     InstagramRequestv2 *syncRequest = new InstagramRequestv2();
     QJsonObject data;
@@ -169,7 +207,7 @@ void Instagramv2::syncFeatures()
         data.insert("_uid",         m_username_id);
         data.insert("id",           m_username_id);
         data.insert("password",     m_password);
-        data.insert("experiments",  EXPERIMENTS);
+        data.insert("experiments",  Constants::experiments());
 
     QString signature = syncRequest->generateSignature(data);
     syncRequest->request("qe/sync/",signature.toUtf8());
@@ -178,8 +216,10 @@ void Instagramv2::syncFeatures()
 //FIXME: uploadImage is not public yeat. Give me few weeks to optimize code
 void Instagramv2::postImage(QString path, QString caption, QString upload_id)
 {
-    m_caption = caption;
-    m_image_path = path;
+    Q_D(Instagramv2);
+
+    d->m_caption = caption;
+    d->m_image_path = path;
 
     QFile image(path);
     if(!image.open(QIODevice::ReadOnly))
@@ -192,7 +232,7 @@ void Instagramv2::postImage(QString path, QString caption, QString upload_id)
     QFileInfo info(image.fileName());
     QString ext = info.completeSuffix();
 
-    QString boundary = m_uuid;
+    QString boundary = d->m_uuid;
 
     if(upload_id.size() == 0)
     {
@@ -206,11 +246,11 @@ void Instagramv2::postImage(QString path, QString caption, QString upload_id)
 
     body += "--"+boundary+"\r\n";
     body += "Content-Disposition: form-data; name=\"_uuid\"\r\n\r\n";
-    body += m_uuid.replace("{","").replace("}","")+"\r\n";
+    body += d->m_uuid.replace("{","").replace("}","")+"\r\n";
 
     body += "--"+boundary+"\r\n";
     body += "Content-Disposition: form-data; name=\"_csrftoken\"\r\n\r\n";
-    body += m_token+"\r\n";
+    body += d->m_token+"\r\n";
 
     body += "--"+boundary+"\r\n";
     body += "Content-Disposition: form-data; name=\"image_compression\"\r\n\r\n";
@@ -227,23 +267,24 @@ void Instagramv2::postImage(QString path, QString caption, QString upload_id)
     InstagramRequestv2 *putPhotoReqest = new InstagramRequestv2();
     putPhotoReqest->fileRquest("upload/photo/",boundary, body);
 
-    QObject::connect(putPhotoReqest,&InstagramRequestv2::replyStringReady,this,&Instagramv2::configurePhoto);
+    QObject::connect(putPhotoReqest,&InstagramRequestv2::replyStringReady,d,&Instagramv2Private::configurePhoto);
 }
 
-void Instagramv2::configurePhoto(QVariant answer)
+void Instagramv2Private::configurePhoto(QVariant answer)
 {
+    Q_Q(Instagramv2);
     QJsonDocument jsonResponse = QJsonDocument::fromJson(answer.toByteArray());
     QJsonObject jsonObject = jsonResponse.object();
     if(jsonObject["status"].toString() != QString("ok"))
     {
-        Q_EMIT error(jsonObject["message"].toString());
+        Q_EMIT q->error(jsonObject["message"].toString());
     }
     else
     {
         QString upload_id = jsonObject["upload_id"].toString();
         if(upload_id.length() == 0)
         {
-            Q_EMIT error("Wrong UPLOAD_ID:"+upload_id);
+            Q_EMIT q->error("Wrong UPLOAD_ID:"+upload_id);
         }
         else
         {
@@ -287,7 +328,7 @@ void Instagramv2::configurePhoto(QVariant answer)
 
             QString signature = configureImageRequest->generateSignature(data);
             configureImageRequest->request("media/configure/",signature.toUtf8());
-            QObject::connect(configureImageRequest,&InstagramRequestv2::replyStringReady,this,&Instagramv2::imageConfigureDataReady);
+            QObject::connect(configureImageRequest,&InstagramRequestv2::replyStringReady,q,&Instagramv2::imageConfigureDataReady);
         }
     }
     m_caption = "";
@@ -302,8 +343,10 @@ void Instagramv2::postVideo(QFile *video)
 
 void Instagramv2::getPopularFeed()
 {
+    Q_D(Instagramv2);
+
     InstagramRequestv2 *getPopularFeedRequest = new InstagramRequestv2();
-    getPopularFeedRequest->request("feed/popular/?people_teaser_supported=1&rank_token="+m_rank_token+"&ranked_content=true&",NULL);
+    getPopularFeedRequest->request("feed/popular/?people_teaser_supported=1&rank_token="+d->m_rank_token+"&ranked_content=true&",NULL);
     QObject::connect(getPopularFeedRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(popularFeedDataReady(QVariant)));
 
 }

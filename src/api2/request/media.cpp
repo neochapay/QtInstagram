@@ -1,15 +1,17 @@
-#include "../instagramv2.h"
+#include "../instagramv2_p.h"
 #include "../instagramrequestv2.h"
 #include <QJsonObject>
 #include <QUuid>
 
 void Instagramv2::like(QString mediaId, QString module)
 {
+    Q_D(Instagramv2);
+
     InstagramRequestv2 *likeRequest = new InstagramRequestv2();
     QJsonObject data;
-        data.insert("_uuid",        m_uuid);
-        data.insert("_uid",         m_username_id);
-        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+m_token);
+        data.insert("_uuid",        d->m_uuid);
+        data.insert("_uid",         d->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+d->m_token);
         data.insert("media_id",     mediaId);
         data.insert("radio-type",   "wifi-none");
         data.insert("module_name",  module);
@@ -21,11 +23,13 @@ void Instagramv2::like(QString mediaId, QString module)
 
 void Instagramv2::unLike(QString mediaId, QString module)
 {
+    Q_D(Instagramv2);
+
     InstagramRequestv2 *unLikeRequest = new InstagramRequestv2();
     QJsonObject data;
-        data.insert("_uuid",        m_uuid);
-        data.insert("_uid",         m_username_id);
-        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+m_token);
+        data.insert("_uuid",        d->m_uuid);
+        data.insert("_uid",         d->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+d->m_token);
         data.insert("media_id",     mediaId);
         data.insert("radio-type",   "wifi-none");
         data.insert("module_name",  module);
@@ -46,11 +50,13 @@ void Instagramv2::getLikedFeed(QString max_id)
 
 void Instagramv2::getInfoMedia(QString mediaId)
 {
+    Q_D(Instagramv2);
+
     InstagramRequestv2 *infoMediaRequest = new InstagramRequestv2();
     QJsonObject data;
-        data.insert("_uuid",        m_uuid);
-        data.insert("_uid",         m_username_id);
-        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+m_token);
+        data.insert("_uuid",        d->m_uuid);
+        data.insert("_uid",         d->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+d->m_token);
         data.insert("media_id", mediaId);
 
     QString signature = infoMediaRequest->generateSignature(data);
@@ -61,11 +67,13 @@ void Instagramv2::getInfoMedia(QString mediaId)
 
 void Instagramv2::deleteMedia(QString mediaId, QString mediaType)
 {
+    Q_D(Instagramv2);
+
     InstagramRequestv2 *deleteMediaRequest = new InstagramRequestv2();
     QJsonObject data;
-        data.insert("_uuid",        m_uuid);
-        data.insert("_uid",         m_username_id);
-        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+m_token);
+        data.insert("_uuid",        d->m_uuid);
+        data.insert("_uid",         d->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+d->m_token);
         data.insert("media_id",    mediaId);
 
     QString signature = deleteMediaRequest->generateSignature(data);
@@ -77,11 +85,13 @@ void Instagramv2::deleteMedia(QString mediaId, QString mediaType)
 
 void Instagramv2::editMedia(QString mediaId, QString captionText, QString mediaType)
 {
+    Q_D(Instagramv2);
+
     InstagramRequestv2 *editMediaRequest = new InstagramRequestv2();
     QJsonObject data;
-        data.insert("_uuid",        m_uuid);
-        data.insert("_uid",         m_username_id);
-        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+m_token);
+        data.insert("_uuid",        d->m_uuid);
+        data.insert("_uid",         d->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+d->m_token);
         data.insert("caption_text", captionText);
 
     QString signature = editMediaRequest->generateSignature(data);
@@ -92,13 +102,15 @@ void Instagramv2::editMedia(QString mediaId, QString captionText, QString mediaT
 
 void Instagramv2::comment(QString mediaId, QString commentText, QString replyCommentId ,QString module)
 {
+    Q_D(Instagramv2);
+
     InstagramRequestv2 *postCommentRequest = new InstagramRequestv2();
     QUuid uuid;
 
     QJsonObject data;
-        data.insert("_uuid",        m_uuid);
-        data.insert("_uid",         m_username_id);
-        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+m_token);
+        data.insert("_uuid",        d->m_uuid);
+        data.insert("_uid",         d->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+d->m_token);
         data.insert("comment_text", commentText);
         data.insert("containermoudle", module);
         data.insert("idempotence_token", uuid.createUuid().toString());
@@ -113,11 +125,13 @@ void Instagramv2::comment(QString mediaId, QString commentText, QString replyCom
 
 void Instagramv2::deleteComment(QString mediaId, QString commentId)
 {
+    Q_D(Instagramv2);
+
     InstagramRequestv2 *deleteCommentRequest = new InstagramRequestv2();
     QJsonObject data;
-        data.insert("_uuid",        m_uuid);
-        data.insert("_uid",         m_username_id);
-        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+m_token);
+        data.insert("_uuid",        d->m_uuid);
+        data.insert("_uid",         d->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+d->m_token);
         //data.insert("caption_text", captionText);
 
     QString signature = deleteCommentRequest->generateSignature(data);
@@ -127,11 +141,13 @@ void Instagramv2::deleteComment(QString mediaId, QString commentId)
 
 void Instagramv2::likeComment(QString commentId)
 {
+    Q_D(Instagramv2);
+
     InstagramRequestv2 *likeCommentRequest = new InstagramRequestv2();
     QJsonObject data;
-        data.insert("_uuid",        m_uuid);
-        data.insert("_uid",         m_username_id);
-        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+m_token);
+        data.insert("_uuid",        d->m_uuid);
+        data.insert("_uid",         d->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+d->m_token);
 
     QString signature = likeCommentRequest->generateSignature(data);
     likeCommentRequest->request("media/"+commentId+"/comment_like/",signature.toUtf8());
@@ -140,11 +156,13 @@ void Instagramv2::likeComment(QString commentId)
 
 void Instagramv2::unlikeComment(QString commentId)
 {
+    Q_D(Instagramv2);
+
     InstagramRequestv2 *unlikeCommentRequest = new InstagramRequestv2();
     QJsonObject data;
-        data.insert("_uuid",        m_uuid);
-        data.insert("_uid",         m_username_id);
-        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+m_token);
+        data.insert("_uuid",        d->m_uuid);
+        data.insert("_uid",         d->m_username_id);
+        data.insert("_csrftoken",   "Set-Cookie: csrftoken="+d->m_token);
 
     QString signature = unlikeCommentRequest->generateSignature(data);
     unlikeCommentRequest->request("media/"+commentId+"/comment_unlike/",signature.toUtf8());
@@ -155,7 +173,7 @@ void Instagramv2::getComments(QString mediaId, QString max_id)
 {
     InstagramRequestv2 *getMediaCommentsRequest = new InstagramRequestv2();
     getMediaCommentsRequest->request("media/"+mediaId+"/comments/?"
-                                     "ig_sig_key_version="+ SIG_KEY_VERSION +
+                                     "ig_sig_key_version="+ Constants::sigKeyVersion() +
                                      (max_id.length()>0 ? "&max_id="+max_id : "")
                                      ,NULL);
     QObject::connect(getMediaCommentsRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(mediaCommentsDataReady(QVariant)));
