@@ -7,6 +7,9 @@
 
 #include <QCryptographicHash>
 #include <QFileInfo>
+#include <QNetworkAccessManager>
+#include <QNetworkCookie>
+#include <QNetworkCookieJar>
 #include <QStandardPaths>
 #include <QDateTime>
 #include <QUuid>
@@ -27,11 +30,37 @@ Instagramv2Private::Instagramv2Private(Instagramv2 *q):
         m_data_path.mkpath(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
     }
 
+    m_manager = new QNetworkAccessManager();
+    QObject::connect(m_manager, &QNetworkAccessManager::finished,
+                     this, &Instagramv2Private::saveCookie);
+
+    m_jar = new QNetworkCookieJar;
+    loadCookies();
+
     QUuid uuid;
     m_uuid = uuid.createUuid().toString();
 
     m_device_id = generateDeviceId();
     setUser();
+}
+
+void Instagramv2Private::loadCookies()
+{
+    QFile f(m_data_path.absolutePath()+"/cookies.dat");
+    f.open(QIODevice::ReadOnly);
+    QDataStream s(&f);
+
+    while(!s.atEnd()){
+        QByteArray c;
+        s >> c;
+        QList<QNetworkCookie> list = QNetworkCookie::parseCookies(c);
+        if(list.count() > 0)
+        {
+            this->m_jar->insertCookie(list.at(0));
+        }
+    }
+
+    this->m_manager->setCookieJar(this->m_jar);
 }
 
 QString Instagramv2Private::generateDeviceId()
@@ -94,8 +123,8 @@ void Instagramv2::login(bool forse)
     if(!d->m_isLoggedIn or forse)
     {
         d->setUser();
-        InstagramRequestv2 *loginRequest = new InstagramRequestv2();
-        loginRequest->request("si/fetch_headers/?challenge_type=signup&guid="+d->m_uuid,NULL);
+        InstagramRequestv2 *loginRequest =
+            d->request("si/fetch_headers/?challenge_type=signup&guid="+d->m_uuid,NULL);
         QObject::connect(loginRequest,&InstagramRequestv2::replyStringReady,d,&Instagramv2Private::doLogin);
     }
 }
@@ -112,8 +141,7 @@ void Instagramv2::logout()
     f_userId.remove();
     f_token.remove();
 
-    InstagramRequestv2 *looutRequest = new InstagramRequestv2();
-    looutRequest->request("accounts/logout/",NULL);
+    InstagramRequestv2 *looutRequest = d->request("accounts/logout/",NULL);
     QObject::connect(looutRequest,&InstagramRequestv2::replyStringReady,this,&Instagramv2::doLogout);
 }
 
@@ -139,7 +167,6 @@ void Instagramv2Private::doLogin()
 {
     Q_Q(Instagramv2);
 
-    InstagramRequestv2 *request = new InstagramRequestv2();
     QRegExp rx("token=(\\w+);");
     QFile f(m_data_path.absolutePath()+"/cookies.dat");
     if (!f.open(QFile::ReadOnly))
@@ -167,8 +194,9 @@ void Instagramv2Private::doLogin()
         data.insert("password",     m_password);
         data.insert("login_attempt_count", QString("0"));
 
-    QString signature = request->generateSignature(data);
-    request->request("accounts/login/",signature.toUtf8());
+    QString signature = InstagramRequestv2::generateSignature(data);
+    InstagramRequestv2 *request =
+        this->request("accounts/login/",signature.toUtf8());
 
     QObject::connect(request,&InstagramRequestv2::replyStringReady,this,&Instagramv2Private::profileConnect);
 }
@@ -199,7 +227,6 @@ void Instagramv2Private::profileConnect(QVariant profile)
 
 void Instagramv2Private::syncFeatures()
 {
-    InstagramRequestv2 *syncRequest = new InstagramRequestv2();
     QJsonObject data;
         data.insert("_uuid",        m_uuid);
         data.insert("_csrftoken",   "Set-Cookie: csrftoken="+m_token);
@@ -208,8 +235,8 @@ void Instagramv2Private::syncFeatures()
         data.insert("password",     m_password);
         data.insert("experiments",  Constants::experiments());
 
-    QString signature = syncRequest->generateSignature(data);
-    syncRequest->request("qe/sync/",signature.toUtf8());
+    QString signature = InstagramRequestv2::generateSignature(data);
+    request("qe/sync/",signature.toUtf8());
 }
 
 //FIXME: uploadImage is not public yeat. Give me few weeks to optimize code
@@ -263,8 +290,8 @@ void Instagramv2::postImage(QString path, QString caption, QString upload_id)
     body += dataStream+"\r\n";
     body += "--"+boundary+"--";
 
-    InstagramRequestv2 *putPhotoReqest = new InstagramRequestv2();
-    putPhotoReqest->fileRquest("upload/photo/",boundary, body);
+    InstagramRequestv2 *putPhotoReqest =
+        d->fileRequest("upload/photo/",boundary, body);
 
     QObject::connect(putPhotoReqest,&InstagramRequestv2::replyStringReady,d,&Instagramv2Private::configurePhoto);
 }
@@ -288,7 +315,6 @@ void Instagramv2Private::configurePhoto(QVariant answer)
         else
         {
             QImage image = QImage(m_image_path);
-            InstagramRequestv2 *configureImageRequest = new InstagramRequestv2();
 
             QJsonObject device;
                 device.insert("manufacturer",   QString("Xiaomi"));
@@ -325,8 +351,9 @@ void Instagramv2Private::configurePhoto(QVariant answer)
                 data.insert("_uid",                 m_username_id);
                 data.insert("_csrftoken",           "Set-Cookie: csrftoken="+m_token);
 
-            QString signature = configureImageRequest->generateSignature(data);
-            configureImageRequest->request("media/configure/",signature.toUtf8());
+            QString signature = InstagramRequestv2::generateSignature(data);
+            InstagramRequestv2 *configureImageRequest =
+                request("media/configure/",signature.toUtf8());
             QObject::connect(configureImageRequest,&InstagramRequestv2::replyStringReady,q,&Instagramv2::imageConfigureDataReady);
         }
     }
@@ -344,16 +371,18 @@ void Instagramv2::getPopularFeed()
 {
     Q_D(Instagramv2);
 
-    InstagramRequestv2 *getPopularFeedRequest = new InstagramRequestv2();
-    getPopularFeedRequest->request("feed/popular/?people_teaser_supported=1&rank_token="+d->m_rank_token+"&ranked_content=true&",NULL);
+    InstagramRequestv2 *getPopularFeedRequest =
+        d->request("feed/popular/?people_teaser_supported=1&rank_token="+d->m_rank_token+"&ranked_content=true&",NULL);
     QObject::connect(getPopularFeedRequest,SIGNAL(replyStringReady(QVariant)),this,SIGNAL(popularFeedDataReady(QVariant)));
 
 }
 
 void Instagramv2::searchUsername(QString username)
 {
-    InstagramRequestv2 *searchUsernameRequest = new InstagramRequestv2();
-    searchUsernameRequest->request("users/"+username+"/usernameinfo/", NULL);
+    Q_D(Instagramv2);
+
+    InstagramRequestv2 *searchUsernameRequest =
+        d->request("users/"+username+"/usernameinfo/", NULL);
     QObject::connect(searchUsernameRequest,SIGNAL(replyStringReady(QVariant)), this, SIGNAL(searchUsernameDataReady(QVariant)));
 }
 

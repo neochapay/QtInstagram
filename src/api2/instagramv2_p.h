@@ -8,6 +8,9 @@
 #include <QObject>
 #include <QString>
 
+class QNetworkAccessManager;
+class QNetworkCookieJar;
+
 class Instagramv2Private: public QObject
 {
     Q_OBJECT
@@ -16,12 +19,18 @@ class Instagramv2Private: public QObject
 public:
     Instagramv2Private(Instagramv2 *q);
 
+    void loadCookies();
+
+    InstagramRequestv2 *fileRequest(QString endpoint, QString boundary, QByteArray data);
+    InstagramRequestv2 *request(QString endpoint, QByteArray post);
+
 private Q_SLOTS:
     void setUser();
     void doLogin();
     void syncFeatures();
     void profileConnect(QVariant profile);
     void configurePhoto(QVariant answer);
+    void saveCookie() const;
 
 private:
     QString m_username;
@@ -40,6 +49,8 @@ private:
     QString m_image_path;
 
     QDir m_data_path;
+    QNetworkAccessManager *m_manager;
+    QNetworkCookieJar *m_jar;
 
     bool m_isLoggedIn = false;
 
