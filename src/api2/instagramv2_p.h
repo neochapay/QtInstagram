@@ -44,7 +44,6 @@ private:
     bool m_isLoggedIn = false;
 
     QString generateDeviceId();
-    InstagramRequestv2 *requestGlobal;
     Instagramv2 *q_ptr;
 };
 

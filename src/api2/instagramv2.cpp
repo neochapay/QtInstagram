@@ -31,7 +31,6 @@ Instagramv2Private::Instagramv2Private(Instagramv2 *q):
     m_uuid = uuid.createUuid().toString();
 
     m_device_id = generateDeviceId();
-    requestGlobal = new InstagramRequestv2();
     setUser();
 }
 
