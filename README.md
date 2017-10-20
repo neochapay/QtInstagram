@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/neochapay/QtInstagram.png)](https://travis-ci.org/neochapay/QtInstagram)
+
 # QtInstagram
 Unofficial Instagram API and Client writen in Qt. Based on https://github.com/mgp25/Instagram-API
 
