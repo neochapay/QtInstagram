@@ -1,5 +1,3 @@
-TEMPLATE = lib
-
-VERSION = 0.1
-
-include(QtInstagram.pri)
+TEMPLATE = subdirs
+SUBDIRS = \
+    src
