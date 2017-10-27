@@ -1,50 +1,30 @@
 #include "instagramrequestv2.h"
+#include "instagramv2_p.h"
 #include "../cripto/hmacsha.h"
 
 #include <QDataStream>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QNetworkAccessManager>
 #include <QNetworkCookie>
 #include <QNetworkCookieJar>
 #include <QNetworkReply>
 #include <QNetworkRequest>
-#include <QStandardPaths>
 
-
-
-InstagramRequestv2::InstagramRequestv2(QObject *parent) : QObject(parent)
+InstagramRequestv2::InstagramRequestv2(QNetworkReply *reply,
+                                       QObject *parent):
+    QObject(parent),
+    m_reply(reply)
 {
-    this->m_data_path =  QDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
-
-    this->m_manager = new QNetworkAccessManager();
-    this->m_jar = new QNetworkCookieJar;
-
-    if(!m_data_path.exists())
-    {
-        m_data_path.mkpath(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
-    }
+    QObject::connect(reply, &QNetworkReply::finished, this, &InstagramRequestv2::finishGetUrl);
 }
 
 
 
-void InstagramRequestv2::fileRquest(QString endpoint, QString boundary, QByteArray data)
+InstagramRequestv2 *Instagramv2Private::fileRequest(QString endpoint, QString boundary, QByteArray data)
 {
-    QFile f(m_data_path.absolutePath()+"/cookies.dat");
-    f.open(QIODevice::ReadOnly);
-    QDataStream s(&f);
-
     QUrl url(Constants::apiUrl()+endpoint);
     QNetworkRequest request(url);
-
-    while(!s.atEnd()){
-        QByteArray c;
-        s >> c;
-        QList<QNetworkCookie> list = QNetworkCookie::parseCookies(c);
-        if(list.count() > 0)
-        {
-            this->m_jar->insertCookie(list.at(0));
-        }
-    }
 
     request.setRawHeader("Connection","close");
     request.setRawHeader("Accept","*/*");
@@ -56,32 +36,15 @@ void InstagramRequestv2::fileRquest(QString endpoint, QString boundary, QByteArr
     request.setRawHeader("Accept-Language","en-US");
     request.setRawHeader("Accept-Encoding","gzip");
 
-    this->m_manager->setCookieJar(this->m_jar);
     QNetworkReply *mReply = this->m_manager->post(request,data);
 
-
-    QObject::connect(mReply, &QNetworkReply::finished, this, &InstagramRequestv2::finishGetUrl);
-    QObject::connect(this->m_manager, &QNetworkAccessManager::finished, this, &InstagramRequestv2::saveCookie);
+    return new InstagramRequestv2(mReply, this);
 }
 
-void InstagramRequestv2::request(QString endpoint, QByteArray post)
+InstagramRequestv2 *Instagramv2Private::request(QString endpoint, QByteArray post)
 {
-    QFile f(m_data_path.absolutePath()+"/cookies.dat");
-    f.open(QIODevice::ReadOnly);
-    QDataStream s(&f);
-
     QUrl url(Constants::apiUrl()+endpoint);
     QNetworkRequest request(url);
-
-    while(!s.atEnd()){
-        QByteArray c;
-        s >> c;
-        QList<QNetworkCookie> list = QNetworkCookie::parseCookies(c);
-        if(list.count() > 0)
-        {
-            this->m_jar->insertCookie(list.at(0));
-        }
-    }
 
     request.setRawHeader("Connection","close");
     request.setRawHeader("Accept","*/*");
@@ -90,12 +53,9 @@ void InstagramRequestv2::request(QString endpoint, QByteArray post)
     request.setRawHeader("Accept-Language","en-US");
     request.setRawHeader("User-Agent",Constants::userAgent());
 
-    this->m_manager->setCookieJar(this->m_jar);
-    this->m_reply = this->m_manager->post(request,post);
-    connections<<m_reply;
+    QNetworkReply *mReply = this->m_manager->post(request,post);
 
-    QObject::connect(this->m_reply, &QNetworkReply::finished, this, &InstagramRequestv2::finishGetUrl);
-    QObject::connect(this->m_manager, &QNetworkAccessManager::finished, this, &InstagramRequestv2::saveCookie);
+    return new InstagramRequestv2(mReply, this);
 }
 
 void InstagramRequestv2::finishGetUrl()
@@ -107,11 +67,10 @@ void InstagramRequestv2::finishGetUrl()
     {
         Q_EMIT replyStringReady(answer);
     }
-    connections.removeAll(nReply);
     nReply->deleteLater();
 }
 
-void InstagramRequestv2::saveCookie()
+void Instagramv2Private::saveCookie() const
 {
     QList<QNetworkCookie> list =
         m_manager->cookieJar()->cookiesForUrl(QUrl(Constants::apiUrl()+"/"));
