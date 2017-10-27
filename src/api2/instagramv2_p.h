@@ -8,7 +8,6 @@
 #include <QObject>
 #include <QString>
 
-class QNetworkAccessManager;
 class QNetworkCookieJar;
 
 class Instagramv2Private: public QObject
@@ -19,6 +18,7 @@ class Instagramv2Private: public QObject
 public:
     Instagramv2Private(Instagramv2 *q);
 
+    void setNetworkAccessManager(QNetworkAccessManager *nam);
     void loadCookies();
 
     InstagramRequestv2 *fileRequest(QString endpoint, QString boundary, QByteArray data);

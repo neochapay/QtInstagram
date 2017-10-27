@@ -1,5 +1,6 @@
-TEMPLATE = lib
+TEMPLATE = subdirs
+SUBDIRS = \
+    src \
+    tests
 
-VERSION = 0.1
-
-include(QtInstagram.pri)
+CONFIG += ordered

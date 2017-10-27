@@ -21,6 +21,7 @@
 #include <QDebug>
 
 Instagramv2Private::Instagramv2Private(Instagramv2 *q):
+    m_manager(0),
     q_ptr(q)
 {
     m_data_path = QDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
@@ -30,18 +31,33 @@ Instagramv2Private::Instagramv2Private(Instagramv2 *q):
         m_data_path.mkpath(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
     }
 
-    m_manager = new QNetworkAccessManager();
-    QObject::connect(m_manager, &QNetworkAccessManager::finished,
-                     this, &Instagramv2Private::saveCookie);
-
     m_jar = new QNetworkCookieJar;
     loadCookies();
+
+    setNetworkAccessManager(new QNetworkAccessManager());
 
     QUuid uuid;
     m_uuid = uuid.createUuid().toString();
 
     m_device_id = generateDeviceId();
     setUser();
+}
+
+void Instagramv2Private::setNetworkAccessManager(QNetworkAccessManager *nam)
+{
+    if (nam == m_manager) return;
+
+    if (m_manager) {
+        delete m_manager;
+    }
+    m_manager = nam;
+    if (m_manager) {
+        QObject::connect(m_manager, &QNetworkAccessManager::finished,
+                         this, &Instagramv2Private::saveCookie);
+
+        m_manager->setCookieJar(m_jar);
+        m_jar->setParent(this);
+    }
 }
 
 void Instagramv2Private::loadCookies()
@@ -59,8 +75,6 @@ void Instagramv2Private::loadCookies()
             this->m_jar->insertCookie(list.at(0));
         }
     }
-
-    this->m_manager->setCookieJar(this->m_jar);
 }
 
 QString Instagramv2Private::generateDeviceId()
@@ -455,4 +469,16 @@ void Instagramv2::cropImg(QString in_filename, QString out_filename, int topSpac
     {
         qDebug() << "NOT SAVE HERE";
     }
+}
+
+void Instagramv2::setNetworkAccessManager(QNetworkAccessManager *nam)
+{
+    Q_D(Instagramv2);
+    d->setNetworkAccessManager(nam);
+}
+
+QNetworkAccessManager *Instagramv2::networkAccessManager() const
+{
+    Q_D(const Instagramv2);
+    return d->m_manager;
 }

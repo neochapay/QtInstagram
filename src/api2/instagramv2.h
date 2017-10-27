@@ -6,6 +6,7 @@
 #include <QVariant>
 
 class QFile;
+class QNetworkAccessManager;
 
 class Instagramv2Private;
 class Instagramv2 : public QObject
@@ -104,6 +105,8 @@ public Q_SLOTS:
     Q_INVOKABLE void getUserTags(QString userId, QString max_id="", QString minTimestamp="");
     Q_INVOKABLE void removeSelftag(QString mediaId);
 
+    void setNetworkAccessManager(QNetworkAccessManager *nam);
+    QNetworkAccessManager *networkAccessManager() const;
 
 Q_SIGNALS:
     void profileConnected(QVariant answer);
