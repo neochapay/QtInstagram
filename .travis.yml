@@ -6,6 +6,7 @@ dist: trusty
 before_install:
   - sudo add-apt-repository ppa:beineri/opt-qt591-trusty -y
   - sudo apt-get update -qq
+  - sudo pip install codecov
 
 install: 
   - sudo apt-get -y install qt59base qt59declarative
@@ -16,6 +17,12 @@ before_script:
 script:
   - mkdir build
   - cd build
-  - qmake ..
+  - qmake CONFIG+=coverage ..
   - make
   - make check
+  - cd ..
+
+after_success:
+  # Collect code coverage results and upload them
+  - ./get_code_cov.sh
+  - bash <(curl -s https://codecov.io/bash)
