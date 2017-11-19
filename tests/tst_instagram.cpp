@@ -42,6 +42,17 @@ private Q_SLOTS:
     void testGetLikedMedia();
     void testGetMediaLikers();
 
+    // people endpoint
+    void testGetInfoByName();
+    void testGetInfoById();
+    void testGetRecentActivityInbox();
+    void testGetFollowingRecentActivity();
+    void testGetFriendship();
+    void testGetFollowing_data();
+    void testGetFollowing();
+    void testGetFollowers_data();
+    void testGetFollowers();
+
 private:
     QString extractUuid(const QUrl &url) const;
     QJsonObject extractSignedData(const QByteArray &body) const;
@@ -53,6 +64,7 @@ private:
 private:
     QString m_usernameId = "789000123";
     QString m_uuid;
+    QString m_rankToken;
     QJsonObject m_defaultHeaders;
 };
 
@@ -101,6 +113,7 @@ void QtInstagramTest::doLogin(Instagram *instagram)
     QTRY_COMPARE(requestCreated.count(), 1);
     FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
     m_uuid = extractUuid(reply->url());
+    m_rankToken = m_usernameId + "_" + m_uuid;
 
     // send a successful reply
     reply->setCookie("Set-Cookie: csrftoken=abc;"
@@ -675,6 +688,238 @@ void QtInstagramTest::testGetMediaLikers()
 
     sendResponseAndCheckSignal(&instagram, reply,
                                SIGNAL(mediaLikersDataReady(QVariant)));
+}
+
+void QtInstagramTest::testGetInfoByName()
+{
+    Instagram instagram;
+
+    FakeNam dummyNam;
+    instagram.setNetworkAccessManager(&dummyNam);
+    doLogin(&instagram);
+
+    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
+
+    instagram.getInfoByName("tom_brown");
+    QTRY_COMPARE(requestCreated.count(), 1);
+    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
+
+    QCOMPARE(reply->url(), QUrl("https://i.instagram.com/api/v1/users/tom_brown/usernameinfo/"));
+    QCOMPARE(reply->headers(), m_defaultHeaders);
+    QVERIFY(reply->body().isEmpty());
+
+    sendResponseAndCheckSignal(&instagram, reply,
+                               SIGNAL(infoByNameDataReady(QVariant)));
+}
+
+void QtInstagramTest::testGetInfoById()
+{
+    Instagram instagram;
+
+    FakeNam dummyNam;
+    instagram.setNetworkAccessManager(&dummyNam);
+    doLogin(&instagram);
+
+    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
+
+    instagram.getInfoById("1234");
+    QTRY_COMPARE(requestCreated.count(), 1);
+    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
+
+    QCOMPARE(reply->url().toString(QUrl::RemoveQuery),
+             QString("https://i.instagram.com/api/v1/users/1234/info/"));
+    QUrlQuery query(reply->url());
+    QVERIFY(query.hasQueryItem("device_id"));
+    QCOMPARE(reply->headers(), m_defaultHeaders);
+    QVERIFY(reply->body().isEmpty());
+
+    sendResponseAndCheckSignal(&instagram, reply,
+                               SIGNAL(infoByIdDataReady(QVariant)));
+}
+
+void QtInstagramTest::testGetRecentActivityInbox()
+{
+    Instagram instagram;
+
+    FakeNam dummyNam;
+    instagram.setNetworkAccessManager(&dummyNam);
+    doLogin(&instagram);
+
+    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
+
+    instagram.getRecentActivityInbox();
+    QTRY_COMPARE(requestCreated.count(), 1);
+    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
+
+    QCOMPARE(reply->url(), QUrl("https://i.instagram.com/api/v1/news/inbox/?"
+                                "activity_module=all&show_su=true"));
+    QCOMPARE(reply->headers(), m_defaultHeaders);
+    QVERIFY(reply->body().isEmpty());
+
+    sendResponseAndCheckSignal(&instagram, reply,
+                               SIGNAL(recentActivityInboxDataReady(QVariant)));
+}
+
+void QtInstagramTest::testGetFollowingRecentActivity()
+{
+    Instagram instagram;
+
+    FakeNam dummyNam;
+    instagram.setNetworkAccessManager(&dummyNam);
+    doLogin(&instagram);
+
+    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
+
+    instagram.getFollowingRecentActivity();
+    QTRY_COMPARE(requestCreated.count(), 1);
+    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
+
+    QCOMPARE(reply->url(), QUrl("https://i.instagram.com/api/v1/news/?"));
+    QCOMPARE(reply->headers(), m_defaultHeaders);
+    QVERIFY(reply->body().isEmpty());
+
+    sendResponseAndCheckSignal(&instagram, reply,
+                               SIGNAL(followingRecentActivityDataReady(QVariant)));
+}
+
+void QtInstagramTest::testGetFriendship()
+{
+    Instagram instagram;
+
+    FakeNam dummyNam;
+    instagram.setNetworkAccessManager(&dummyNam);
+    doLogin(&instagram);
+
+    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
+
+    instagram.getFriendship("tom");
+    QTRY_COMPARE(requestCreated.count(), 1);
+    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
+
+    QCOMPARE(reply->url(), QUrl("https://i.instagram.com/api/v1/friendships/show/tom/"));
+    QCOMPARE(reply->headers(), m_defaultHeaders);
+    QVERIFY(reply->body().isEmpty());
+
+    sendResponseAndCheckSignal(&instagram, reply,
+                               SIGNAL(friendshipDataReady(QVariant)));
+}
+
+void QtInstagramTest::testGetFollowing_data()
+{
+    QTest::addColumn<QString>("maxId");
+    QTest::addColumn<QString>("searchQuery");
+    QTest::addColumn<QUrl>("expectedUrl");
+
+    QTest::newRow("no params") <<
+        QString() <<
+        QString() <<
+        QUrl("https://i.instagram.com/api/v1/friendships/john/following/?"
+             "rank_token=RANKTOKEN");
+
+    QTest::newRow("with max") <<
+        QString("45") <<
+        QString() <<
+        QUrl("https://i.instagram.com/api/v1/friendships/john/following/?"
+             "rank_token=RANKTOKEN&max_id=45");
+
+    QTest::newRow("with query") <<
+        QString() <<
+        QString("search_query") <<
+        QUrl("https://i.instagram.com/api/v1/friendships/john/following/?"
+             "rank_token=RANKTOKEN&query=search_query");
+
+    QTest::newRow("with max and query") <<
+        QString("981") <<
+        QString("search_query2") <<
+        QUrl("https://i.instagram.com/api/v1/friendships/john/following/?"
+             "rank_token=RANKTOKEN&max_id=981&query=search_query2");
+}
+
+void QtInstagramTest::testGetFollowing()
+{
+    QFETCH(QString, maxId);
+    QFETCH(QString, searchQuery);
+    QFETCH(QUrl, expectedUrl);
+
+    Instagram instagram;
+
+    FakeNam dummyNam;
+    instagram.setNetworkAccessManager(&dummyNam);
+    doLogin(&instagram);
+
+    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
+
+    instagram.getFollowing("john", maxId, searchQuery);
+    QTRY_COMPARE(requestCreated.count(), 1);
+    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
+
+    QString expectedUrlString(expectedUrl.toString().replace("RANKTOKEN", m_rankToken));
+    QCOMPARE(reply->url(), QUrl(expectedUrlString));
+
+    QCOMPARE(reply->headers(), m_defaultHeaders);
+    QVERIFY(reply->body().isEmpty());
+
+    sendResponseAndCheckSignal(&instagram, reply,
+                               SIGNAL(followingDataReady(QVariant)));
+}
+
+void QtInstagramTest::testGetFollowers_data()
+{
+    QTest::addColumn<QString>("maxId");
+    QTest::addColumn<QString>("searchQuery");
+    QTest::addColumn<QUrl>("expectedUrl");
+
+    QTest::newRow("no params") <<
+        QString() <<
+        QString() <<
+        QUrl("https://i.instagram.com/api/v1/friendships/john/followers/?"
+             "rank_token=RANKTOKEN");
+
+    QTest::newRow("with max") <<
+        QString("45") <<
+        QString() <<
+        QUrl("https://i.instagram.com/api/v1/friendships/john/followers/?"
+             "rank_token=RANKTOKEN&max_id=45");
+
+    QTest::newRow("with query") <<
+        QString() <<
+        QString("search_query") <<
+        QUrl("https://i.instagram.com/api/v1/friendships/john/followers/?"
+             "rank_token=RANKTOKEN&query=search_query");
+
+    QTest::newRow("with max and query") <<
+        QString("981") <<
+        QString("search_query2") <<
+        QUrl("https://i.instagram.com/api/v1/friendships/john/followers/?"
+             "rank_token=RANKTOKEN&max_id=981&query=search_query2");
+}
+
+void QtInstagramTest::testGetFollowers()
+{
+    QFETCH(QString, maxId);
+    QFETCH(QString, searchQuery);
+    QFETCH(QUrl, expectedUrl);
+
+    Instagram instagram;
+
+    FakeNam dummyNam;
+    instagram.setNetworkAccessManager(&dummyNam);
+    doLogin(&instagram);
+
+    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
+
+    instagram.getFollowers("john", maxId, searchQuery);
+    QTRY_COMPARE(requestCreated.count(), 1);
+    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
+
+    QString expectedUrlString(expectedUrl.toString().replace("RANKTOKEN", m_rankToken));
+    QCOMPARE(reply->url(), QUrl(expectedUrlString));
+
+    QCOMPARE(reply->headers(), m_defaultHeaders);
+    QVERIFY(reply->body().isEmpty());
+
+    sendResponseAndCheckSignal(&instagram, reply,
+                               SIGNAL(followersDataReady(QVariant)));
 }
 
 QTEST_GUILESS_MAIN(QtInstagramTest)
