@@ -385,6 +385,21 @@ void QtInstagramTest::testBodilessRequests_data()
         QUrl("https://i.instagram.com/api/v1/friendships/john/followers/?"
              "rank_token=RANKTOKEN&max_id=981&query=search_query2") <<
         SIGNAL(followersDataReady(QVariant));
+
+    QTest::newRow("searchUser") <<
+        TestedMethod([](Instagram &i) { i.searchUser("search_query3"); }) <<
+        QUrl("https://i.instagram.com/api/v1/users/search/?"
+             "query=search_query3"
+             "&is_typeahead=true"
+             "&rank_token=RANKTOKEN"
+             "&ig_sig_key_version=4") <<
+        SIGNAL(searchUserDataReady(QVariant));
+
+    QTest::newRow("getSugestedUser") <<
+        TestedMethod([](Instagram &i) { i.getSugestedUser("821"); }) <<
+        QUrl("https://i.instagram.com/api/v1/discover/chaining/?"
+             "target_id=821") <<
+        SIGNAL(suggestedUserDataReady(QVariant));
 }
 
 void QtInstagramTest::testBodilessRequests()
@@ -542,6 +557,74 @@ void QtInstagramTest::testRequests_data()
             { "_uuid", "UUID" },
         } <<
         SIGNAL(commentUnliked(QVariant));
+
+    // people endpoint
+
+    QTest::newRow("follow") <<
+        TestedMethod([](Instagram &i) { i.follow("2732"); }) <<
+        QUrl("https://i.instagram.com/api/v1/friendships/create/2732/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+            { "user_id", "2732" },
+            { "radio_type", "wifi-none" },
+        } <<
+        SIGNAL(followDataReady(QVariant));
+
+    QTest::newRow("unFollow") <<
+        TestedMethod([](Instagram &i) { i.unFollow("2731"); }) <<
+        QUrl("https://i.instagram.com/api/v1/friendships/destroy/2731/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+            { "user_id", "2731" },
+            { "radio_type", "wifi-none" },
+        } <<
+        SIGNAL(unfollowDataReady(QVariant));
+
+    QTest::newRow("favorite") <<
+        TestedMethod([](Instagram &i) { i.favorite("2761"); }) <<
+        QUrl("https://i.instagram.com/api/v1/friendships/favorite/2761/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+        } <<
+        SIGNAL(favoriteDataReady(QVariant));
+
+    QTest::newRow("unFavorite") <<
+        TestedMethod([](Instagram &i) { i.unFavorite("2765"); }) <<
+        QUrl("https://i.instagram.com/api/v1/friendships/unfavorite/2765/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+        } <<
+        SIGNAL(unFavoriteDataReady(QVariant));
+
+    QTest::newRow("block") <<
+        TestedMethod([](Instagram &i) { i.block("1989"); }) <<
+        QUrl("https://i.instagram.com/api/v1/friendships/block/1989/?") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+            { "user_id", "1989" },
+        } <<
+        SIGNAL(blockDataReady(QVariant));
+
+    QTest::newRow("unBlock") <<
+        TestedMethod([](Instagram &i) { i.unBlock("7373"); }) <<
+        QUrl("https://i.instagram.com/api/v1/friendships/unblock/7373/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+            { "user_id", "7373" },
+        } <<
+        SIGNAL(unBlockDataReady(QVariant));
 }
 
 void QtInstagramTest::testRequests()
