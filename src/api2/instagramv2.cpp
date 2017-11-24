@@ -37,7 +37,7 @@ Instagramv2Private::Instagramv2Private(Instagramv2 *q):
     setNetworkAccessManager(new QNetworkAccessManager());
 
     QUuid uuid;
-    m_uuid = uuid.createUuid().toString();
+    m_uuid = uuid.createUuid().toString().remove('{').remove('}');
 
     m_device_id = generateDeviceId();
     setUser();
@@ -286,7 +286,7 @@ void Instagramv2::postImage(QString path, QString caption, QString upload_id)
 
     body += "--"+boundary+"\r\n";
     body += "Content-Disposition: form-data; name=\"_uuid\"\r\n\r\n";
-    body += d->m_uuid.replace("{","").replace("}","")+"\r\n";
+    body += d->m_uuid+"\r\n";
 
     body += "--"+boundary+"\r\n";
     body += "Content-Disposition: form-data; name=\"_csrftoken\"\r\n\r\n";
