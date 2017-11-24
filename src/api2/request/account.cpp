@@ -86,8 +86,6 @@ void Instagramv2::editProfile(QString url, QString phone, QString first_name, QS
 {
     Q_D(Instagramv2);
 
-    getCurrentUser();
-
     QString gen_string;
     if(gender)
     {

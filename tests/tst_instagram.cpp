@@ -14,6 +14,19 @@
 #include <QUrlQuery>
 #include "fake_network.h"
 
+typedef std::function<void(Instagram &)> TestedMethod;
+Q_DECLARE_METATYPE(TestedMethod)
+
+namespace QTest {
+template<>
+char *toString(const QJsonObject &p)
+{
+    QJsonDocument doc(p);
+    QByteArray ba = doc.toJson(QJsonDocument::Compact);
+    return qstrdup(ba.data());
+}
+} // namespace
+
 class QtInstagramTest: public QObject
 {
     Q_OBJECT
@@ -23,35 +36,13 @@ private Q_SLOTS:
     void testLogin_data();
     void testLogin();
 
-    // media endpoint
-    void testLike();
-    void testUnlike();
-    void testGetLikeFeed_data();
-    void testGetLikeFeed();
-    void testGetInfoMedia();
-    void testDeleteMedia();
-    void testEditMedia();
-    void testComment_data();
-    void testComment();
-    void testDeleteComment();
-    void testLikeComment();
-    void testUnlikeComment();
-    void testGetComments_data();
-    void testGetComments();
-    void testGetLikedMedia_data();
-    void testGetLikedMedia();
-    void testGetMediaLikers();
+    void testBodilessRequests_data();
+    void testBodilessRequests();
+    void testRequests_data();
+    void testRequests();
 
     // people endpoint
-    void testGetInfoByName();
     void testGetInfoById();
-    void testGetRecentActivityInbox();
-    void testGetFollowingRecentActivity();
-    void testGetFriendship();
-    void testGetFollowing_data();
-    void testGetFollowing();
-    void testGetFollowers_data();
-    void testGetFollowers();
 
 private:
     QString extractUuid(const QUrl &url) const;
@@ -60,8 +51,10 @@ private:
     void sendResponseAndCheckSignal(Instagram *instagram, FakeReply *reply,
                                     const char *signalName);
     bool checkUuid(const QString &uuid);
+    QString &replaceMacros(QString source);
 
 private:
+    QString m_deviceId;
     QString m_usernameId = "789000123";
     QString m_uuid;
     QString m_rankToken;
@@ -124,6 +117,9 @@ void QtInstagramTest::doLogin(Instagram *instagram)
     QTRY_COMPARE(requestCreated.count(), 2);
     reply = requestCreated.at(1).at(0).value<FakeReply*>();
 
+    QJsonObject loginData = extractSignedData(reply->body());
+    m_deviceId = loginData["device_id"].toString();
+    QVERIFY(!m_deviceId.isEmpty());
 
     // Sent the login reply
     reply->setData("{\"logged_in_user\": {\"pk\": 789000123}}");
@@ -133,6 +129,15 @@ void QtInstagramTest::doLogin(Instagram *instagram)
 bool QtInstagramTest::checkUuid(const QString &uuid)
 {
     return !QUuid(uuid).isNull();
+}
+
+QString &QtInstagramTest::replaceMacros(QString source)
+{
+    return source.
+        replace("DEVICEID", m_deviceId).
+        replace("RANKTOKEN", m_rankToken).
+        replace("USERNAMEID", m_usernameId).
+        replace("UUID", m_uuid);
 }
 
 void QtInstagramTest::initTestCase()
@@ -278,84 +283,304 @@ void QtInstagramTest::testLogin()
     }
 }
 
-void QtInstagramTest::testLike()
+void QtInstagramTest::testBodilessRequests_data()
 {
-    Instagram instagram;
-
-    FakeNam dummyNam;
-    instagram.setNetworkAccessManager(&dummyNam);
-    doLogin(&instagram);
-
-    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
-
-    instagram.like("123", "random");
-    QTRY_COMPARE(requestCreated.count(), 1);
-    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
-
-    QCOMPARE(reply->url(), QUrl("https://i.instagram.com/api/v1/media/123/like/"));
-    QCOMPARE(reply->headers(), m_defaultHeaders);
-    QJsonObject expectedRequest {
-        { "_csrftoken", "Set-Cookie: csrftoken=abc" },
-        { "_uid", m_usernameId },
-        { "_uuid", m_uuid },
-        { "media_id", "123" },
-        { "module_name", "random" },
-        { "radio-type", "wifi-none" },
-    };
-    QCOMPARE(extractSignedData(reply->body()), expectedRequest);
-
-    sendResponseAndCheckSignal(&instagram, reply,
-                               SIGNAL(likeDataReady(QVariant)));
-}
-
-void QtInstagramTest::testUnlike()
-{
-    Instagram instagram;
-
-    FakeNam dummyNam;
-    instagram.setNetworkAccessManager(&dummyNam);
-    doLogin(&instagram);
-
-    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
-
-    instagram.unLike("567", "images");
-    QTRY_COMPARE(requestCreated.count(), 1);
-    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
-
-    QCOMPARE(reply->url(), QUrl("https://i.instagram.com/api/v1/media/567/unlike/"));
-    QCOMPARE(reply->headers(), m_defaultHeaders);
-    QJsonObject expectedRequest {
-        { "_csrftoken", "Set-Cookie: csrftoken=abc" },
-        { "_uid", m_usernameId },
-        { "_uuid", m_uuid },
-        { "media_id", "567" },
-        { "module_name", "images" },
-        { "radio-type", "wifi-none" },
-    };
-    QCOMPARE(extractSignedData(reply->body()), expectedRequest);
-
-    sendResponseAndCheckSignal(&instagram, reply,
-                               SIGNAL(unLikeDataReady(QVariant)));
-}
-
-void QtInstagramTest::testGetLikeFeed_data()
-{
-    QTest::addColumn<QString>("maxId");
+    QTest::addColumn<TestedMethod>("method");
     QTest::addColumn<QUrl>("expectedUrl");
+    QTest::addColumn<QString>("expectedSignal");
 
-    QTest::newRow("no max") <<
-        QString() <<
-        QUrl("https://i.instagram.com/api/v1/feed/liked/");
+    // media endpoint
 
-    QTest::newRow("with max") <<
-        QString("999") <<
-        QUrl("https://i.instagram.com/api/v1/feed/liked/?max_id=999");
+    QTest::newRow("getLikedFeed, no max") <<
+        TestedMethod([](Instagram &i) { i.getLikedFeed(); }) <<
+        QUrl("https://i.instagram.com/api/v1/feed/liked/") <<
+        SIGNAL(likedFeedDataReady(QVariant));
+
+    QTest::newRow("getLikedFeed, with max") <<
+        TestedMethod([](Instagram &i) { i.getLikedFeed("999"); }) <<
+        QUrl("https://i.instagram.com/api/v1/feed/liked/?max_id=999") <<
+        SIGNAL(likedFeedDataReady(QVariant));
+
+    QTest::newRow("getFriendship") <<
+        TestedMethod([](Instagram &i) { i.getFriendship("tom"); }) <<
+        QUrl("https://i.instagram.com/api/v1/friendships/show/tom/") <<
+        SIGNAL(friendshipDataReady(QVariant));
+
+    QTest::newRow("getRecentActivityInbox") <<
+        TestedMethod([](Instagram &i) { i.getRecentActivityInbox(); }) <<
+        QUrl("https://i.instagram.com/api/v1/news/inbox/?"
+             "activity_module=all&show_su=true") <<
+        SIGNAL(recentActivityInboxDataReady(QVariant));
+
+    QTest::newRow("getComments, no max") <<
+        TestedMethod([](Instagram &i) { i.getComments("321"); }) <<
+        QUrl("https://i.instagram.com/api/v1/media/321/comments/?"
+             "ig_sig_key_version=4") <<
+        SIGNAL(mediaCommentsDataReady(QVariant));
+
+    QTest::newRow("getComments, with max") <<
+        TestedMethod([](Instagram &i) { i.getComments("321", "789"); }) <<
+        QUrl("https://i.instagram.com/api/v1/media/321/comments/?"
+             "ig_sig_key_version=4&max_id=789") <<
+        SIGNAL(mediaCommentsDataReady(QVariant));
+
+    QTest::newRow("getLikedMedia, no max") <<
+        TestedMethod([](Instagram &i) { i.getLikedMedia(); }) <<
+        QUrl("https://i.instagram.com/api/v1/feed/liked/") <<
+        SIGNAL(likedMediaDataReady(QVariant));
+
+    QTest::newRow("getLikedMedia, with max") <<
+        TestedMethod([](Instagram &i) { i.getLikedMedia("12"); }) <<
+        QUrl("https://i.instagram.com/api/v1/feed/liked/?max_id=12") <<
+        SIGNAL(likedMediaDataReady(QVariant));
+
+    QTest::newRow("getMediaLikers") <<
+        TestedMethod([](Instagram &i) { i.getMediaLikers("3232"); }) <<
+        QUrl("https://i.instagram.com/api/v1/media/3232/likers/") <<
+        SIGNAL(mediaLikersDataReady(QVariant));
+
+    // people endpoint
+
+    QTest::newRow("getInfoByName") <<
+        TestedMethod([](Instagram &i) { i.getInfoByName("tom_brown"); }) <<
+        QUrl("https://i.instagram.com/api/v1/users/tom_brown/usernameinfo/") <<
+        SIGNAL(infoByNameDataReady(QVariant));
+
+    QTest::newRow("getFollowingRecentActivity") <<
+        TestedMethod([](Instagram &i) { i.getFollowingRecentActivity(); }) <<
+        QUrl("https://i.instagram.com/api/v1/news/?") <<
+        SIGNAL(followingRecentActivityDataReady(QVariant));
+
+    QTest::newRow("getFollowing, no params") <<
+        TestedMethod([](Instagram &i) { i.getFollowing("john"); }) <<
+        QUrl("https://i.instagram.com/api/v1/friendships/john/following/?"
+             "rank_token=RANKTOKEN") <<
+        SIGNAL(followingDataReady(QVariant));
+
+
+    QTest::newRow("getFollowing, with max") <<
+        TestedMethod([](Instagram &i) { i.getFollowing("john", "45"); }) <<
+        QUrl("https://i.instagram.com/api/v1/friendships/john/following/?"
+             "rank_token=RANKTOKEN&max_id=45") <<
+        SIGNAL(followingDataReady(QVariant));
+
+    QTest::newRow("getFollowing, with query") <<
+        TestedMethod([](Instagram &i) { i.getFollowing("john", QString(), "search_query"); }) <<
+        QUrl("https://i.instagram.com/api/v1/friendships/john/following/?"
+             "rank_token=RANKTOKEN&query=search_query") <<
+        SIGNAL(followingDataReady(QVariant));
+
+    QTest::newRow("getFollowing, with max and query") <<
+        TestedMethod([](Instagram &i) { i.getFollowing("john", "981", "search_query2"); }) <<
+        QUrl("https://i.instagram.com/api/v1/friendships/john/following/?"
+             "rank_token=RANKTOKEN&max_id=981&query=search_query2") <<
+        SIGNAL(followingDataReady(QVariant));
+
+    QTest::newRow("getFollowers, no params") <<
+        TestedMethod([](Instagram &i) { i.getFollowers("john"); }) <<
+        QUrl("https://i.instagram.com/api/v1/friendships/john/followers/?"
+             "rank_token=RANKTOKEN") <<
+        SIGNAL(followersDataReady(QVariant));
+
+    QTest::newRow("getFollowers, with max") <<
+        TestedMethod([](Instagram &i) { i.getFollowers("john", "45"); }) <<
+        QUrl("https://i.instagram.com/api/v1/friendships/john/followers/?"
+             "rank_token=RANKTOKEN&max_id=45") <<
+        SIGNAL(followersDataReady(QVariant));
+
+    QTest::newRow("getFollowers, with query") <<
+        TestedMethod([](Instagram &i) { i.getFollowers("john", QString(), "search_query"); }) <<
+        QUrl("https://i.instagram.com/api/v1/friendships/john/followers/?"
+             "rank_token=RANKTOKEN&query=search_query") <<
+        SIGNAL(followersDataReady(QVariant));
+
+    QTest::newRow("getFollowers, with max and query") <<
+        TestedMethod([](Instagram &i) { i.getFollowers("john", "981", "search_query2"); }) <<
+        QUrl("https://i.instagram.com/api/v1/friendships/john/followers/?"
+             "rank_token=RANKTOKEN&max_id=981&query=search_query2") <<
+        SIGNAL(followersDataReady(QVariant));
+
+    QTest::newRow("searchUser") <<
+        TestedMethod([](Instagram &i) { i.searchUser("search_query3"); }) <<
+        QUrl("https://i.instagram.com/api/v1/users/search/?"
+             "query=search_query3"
+             "&is_typeahead=true"
+             "&rank_token=RANKTOKEN"
+             "&ig_sig_key_version=4") <<
+        SIGNAL(searchUserDataReady(QVariant));
+
+    QTest::newRow("getSugestedUser") <<
+        TestedMethod([](Instagram &i) { i.getSugestedUser("821"); }) <<
+        QUrl("https://i.instagram.com/api/v1/discover/chaining/?"
+             "target_id=821") <<
+        SIGNAL(suggestedUserDataReady(QVariant));
+
+    // direct endpoint
+
+    QTest::newRow("getInbox, no cursor") <<
+        TestedMethod([](Instagram &i) { i.getInbox(); }) <<
+        QUrl("https://i.instagram.com/api/v1/direct_v2/inbox/?"
+             "persistentBadging=true&"
+             "use_unified_inbox=true") <<
+        SIGNAL(inboxDataReady(QVariant));
+
+    QTest::newRow("getInbox, with cursor") <<
+        TestedMethod([](Instagram &i) { i.getInbox("main"); }) <<
+        QUrl("https://i.instagram.com/api/v1/direct_v2/inbox/?"
+             "persistentBadging=true&"
+             "use_unified_inbox=true&"
+             "cursor=main") <<
+        SIGNAL(inboxDataReady(QVariant));
+
+    QTest::newRow("getPendingInbox") <<
+        TestedMethod([](Instagram &i) { i.getPendingInbox(); }) <<
+        QUrl("https://i.instagram.com/api/v1/direct_v2/pending_inbox/"
+             "persistentBadging=true&"
+             "use_unified_inbox=true") <<
+        SIGNAL(pendingInboxDataReady(QVariant));
+
+    QTest::newRow("getDirectThread, no cursor") <<
+        TestedMethod([](Instagram &i) { i.getDirectThread("123"); }) <<
+        QUrl("https://i.instagram.com/api/v1/direct_v2/threads/123/?"
+             "use_unified_inbox=true") <<
+        SIGNAL(directThreadDataReady(QVariant));
+
+    QTest::newRow("getDirectThread, with cursor") <<
+        TestedMethod([](Instagram &i) { i.getDirectThread("321", "main"); }) <<
+        QUrl("https://i.instagram.com/api/v1/direct_v2/threads/321/?"
+             "use_unified_inbox=true&"
+             "cursor=main") <<
+        SIGNAL(directThreadDataReady(QVariant));
+
+    QTest::newRow("getRecentRecipients") <<
+        TestedMethod([](Instagram &i) { i.getRecentRecipients(); }) <<
+        QUrl("https://i.instagram.com/api/v1/direct_share/recent_recipients/") <<
+        SIGNAL(recentRecipientsDataReady(QVariant));
+
+    // discover endpoint
+
+    QTest::newRow("getExploreFeed, no max") <<
+        TestedMethod([](Instagram &i) { i.getExploreFeed(QString(), "0"); }) <<
+        QUrl("https://i.instagram.com/api/v1/discover/explore/?"
+             "is_prefetch=0&"
+             "is_from_promote=false&"
+             "session_id=abc&"
+             "module=explore_popular") <<
+        SIGNAL(exploreFeedDataReady(QVariant));
+
+    QTest::newRow("getExploreFeed, with max") <<
+        TestedMethod([](Instagram &i) { i.getExploreFeed("12", "1"); }) <<
+        QUrl("https://i.instagram.com/api/v1/discover/explore/?"
+             "is_prefetch=1&"
+             "is_from_promote=false&"
+             "session_id=abc&"
+             "module=explore_popular&"
+             "max_id=12") <<
+        SIGNAL(exploreFeedDataReady(QVariant));
+
+    // hashtag endpoint
+
+    QTest::newRow("getTagFeed, no max") <<
+        TestedMethod([](Instagram &i) { i.getTagFeed("cats"); }) <<
+        QUrl("https://i.instagram.com/api/v1/feed/tag/cats/?"
+             "rank_token=RANKTOKEN&"
+             "ranked_content=true") <<
+        SIGNAL(tagFeedDataReady(QVariant));
+
+    QTest::newRow("getTagFeed, with max") <<
+        TestedMethod([](Instagram &i) { i.getTagFeed("dogs", "13"); }) <<
+        QUrl("https://i.instagram.com/api/v1/feed/tag/dogs/?"
+             "rank_token=RANKTOKEN&"
+             "ranked_content=true&"
+             "max_id=13") <<
+        SIGNAL(tagFeedDataReady(QVariant));
+
+    // story endpoint
+
+    QTest::newRow("getReelsTrayFeed") <<
+        TestedMethod([](Instagram &i) { i.getReelsTrayFeed(); }) <<
+        QUrl("https://i.instagram.com/api/v1/feed/reels_tray/") <<
+        SIGNAL(reelsTrayFeedDataReady(QVariant));
+
+    QTest::newRow("getUserReelsMediaFeed") <<
+        TestedMethod([](Instagram &i) { i.getUserReelsMediaFeed("2374"); }) <<
+        QUrl("https://i.instagram.com/api/v1/feed/user/2374/reel_media/") <<
+        SIGNAL(userReelsMediaFeedDataReady(QVariant));
+
+    // timeline endpoint
+
+    QTest::newRow("getUserFeed, no max, no ts") <<
+        TestedMethod([](Instagram &i) { i.getUserFeed("2392"); }) <<
+        QUrl("https://i.instagram.com/api/v1/feed/user/2392/?"
+             "rank_token=RANKTOKEN&"
+             "ranked_content=true") <<
+        SIGNAL(userFeedDataReady(QVariant));
+
+    QTest::newRow("getUserFeed, max, no ts") <<
+        TestedMethod([](Instagram &i) { i.getUserFeed("2392", "23"); }) <<
+        QUrl("https://i.instagram.com/api/v1/feed/user/2392/?"
+             "rank_token=RANKTOKEN&"
+             "max_id=23&"
+             "ranked_content=true") <<
+        SIGNAL(userFeedDataReady(QVariant));
+
+    QTest::newRow("getUserFeed, no max, ts") <<
+        TestedMethod([](Instagram &i) { i.getUserFeed("2392", QString(), "112"); }) <<
+        QUrl("https://i.instagram.com/api/v1/feed/user/2392/?"
+             "rank_token=RANKTOKEN&"
+             "min_timestamp=112&"
+             "ranked_content=true") <<
+        SIGNAL(userFeedDataReady(QVariant));
+
+    QTest::newRow("getUserFeed, max, ts") <<
+        TestedMethod([](Instagram &i) { i.getUserFeed("2392", "21", "111"); }) <<
+        QUrl("https://i.instagram.com/api/v1/feed/user/2392/?"
+             "rank_token=RANKTOKEN&"
+             "max_id=21&"
+             "min_timestamp=111&"
+             "ranked_content=true") <<
+        SIGNAL(userFeedDataReady(QVariant));
+
+    // usertag endpoint
+
+    QTest::newRow("getUserTags, no max, no ts") <<
+        TestedMethod([](Instagram &i) { i.getUserTags("2392"); }) <<
+        QUrl("https://i.instagram.com/api/v1/usertags/2392/feed/?"
+             "rank_token=RANKTOKEN&"
+             "ranked_content=true") <<
+        SIGNAL(userTagsDataReady(QVariant));
+
+    QTest::newRow("getUserTags, max, no ts") <<
+        TestedMethod([](Instagram &i) { i.getUserTags("2392", "23"); }) <<
+        QUrl("https://i.instagram.com/api/v1/usertags/2392/feed/?"
+             "rank_token=RANKTOKEN&"
+             "ranked_content=true&"
+             "max_id=23") <<
+        SIGNAL(userTagsDataReady(QVariant));
+
+    QTest::newRow("getUserTags, no max, ts") <<
+        TestedMethod([](Instagram &i) { i.getUserTags("2392", QString(), "112"); }) <<
+        QUrl("https://i.instagram.com/api/v1/usertags/2392/feed/?"
+             "rank_token=RANKTOKEN&"
+             "ranked_content=true&"
+             "min_timestamp=112") <<
+        SIGNAL(userTagsDataReady(QVariant));
+
+    QTest::newRow("getUserTags, max, ts") <<
+        TestedMethod([](Instagram &i) { i.getUserTags("2392", "21", "111"); }) <<
+        QUrl("https://i.instagram.com/api/v1/usertags/2392/feed/?"
+             "rank_token=RANKTOKEN&"
+             "ranked_content=true&"
+             "max_id=21&"
+             "min_timestamp=111") <<
+        SIGNAL(userTagsDataReady(QVariant));
 }
 
-void QtInstagramTest::testGetLikeFeed()
+void QtInstagramTest::testBodilessRequests()
 {
-    QFETCH(QString, maxId);
+    QFETCH(TestedMethod, method);
     QFETCH(QUrl, expectedUrl);
+    QFETCH(QString, expectedSignal);
 
     Instagram instagram;
 
@@ -365,20 +590,382 @@ void QtInstagramTest::testGetLikeFeed()
 
     QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
 
-    instagram.getLikedFeed(maxId);
+    method(instagram);
     QTRY_COMPARE(requestCreated.count(), 1);
     FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
 
-    QCOMPARE(reply->url(), expectedUrl);
+    /* Replace dynamic parameters */
+    QString expectedUrlString(replaceMacros(expectedUrl.toString()));
+    QCOMPARE(reply->url(), QUrl(expectedUrlString));
+
     QCOMPARE(reply->headers(), m_defaultHeaders);
     QVERIFY(reply->body().isEmpty());
 
     sendResponseAndCheckSignal(&instagram, reply,
-                               SIGNAL(likedFeedDataReady(QVariant)));
+                               expectedSignal.toUtf8().constData());
 }
 
-void QtInstagramTest::testGetInfoMedia()
+void QtInstagramTest::testRequests_data()
 {
+    QTest::addColumn<TestedMethod>("method");
+    QTest::addColumn<QUrl>("expectedUrl");
+    QTest::addColumn<QJsonObject>("expectedBody");
+    QTest::addColumn<QString>("expectedSignal");
+
+    // media endpoint
+
+    QTest::newRow("like") <<
+        TestedMethod([](Instagram &i) { i.like("123", "random"); }) <<
+        QUrl("https://i.instagram.com/api/v1/media/123/like/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+            { "media_id", "123" },
+            { "module_name", "random" },
+            { "radio-type", "wifi-none" },
+        } <<
+        SIGNAL(likeDataReady(QVariant));
+
+    QTest::newRow("unLike") <<
+        TestedMethod([](Instagram &i) { i.unLike("567", "images"); }) <<
+        QUrl("https://i.instagram.com/api/v1/media/567/unlike/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+            { "media_id", "567" },
+            { "module_name", "images" },
+            { "radio-type", "wifi-none" },
+        } <<
+        SIGNAL(unLikeDataReady(QVariant));
+
+    QTest::newRow("getInfoMedia") <<
+        TestedMethod([](Instagram &i) { i.getInfoMedia("121"); }) <<
+        QUrl("https://i.instagram.com/api/v1/media/121/info/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+            { "media_id", "121" },
+        } <<
+        SIGNAL(mediaInfoReady(QVariant));
+
+    QTest::newRow("deleteMedia") <<
+        TestedMethod([](Instagram &i) { i.deleteMedia("135", "image"); }) <<
+        QUrl("https://i.instagram.com/api/v1/media/135/delete/?media_type=image") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+            { "media_id", "135" },
+        } <<
+        SIGNAL(mediaDeleted(QVariant));
+
+    QTest::newRow("editMedia") <<
+        TestedMethod([](Instagram &i) { i.editMedia("987", "New caption", "image"); }) <<
+        QUrl("https://i.instagram.com/api/v1/media/987/edit_media/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+            { "caption_text", "New caption" },
+        } <<
+        SIGNAL(mediaEdited(QVariant));
+
+    QTest::newRow("comment, no reply ID") <<
+        TestedMethod([](Instagram &i) { i.comment("585", "Hi there!", QString(), "spam"); }) <<
+        QUrl("https://i.instagram.com/api/v1/media/585/comment/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+            { "containermoudle", "spam" },
+            { "comment_text", "Hi there!" },
+            { "radio-type", "wifi-none" },
+            { "idempotence_token", "ANYUUID" },
+        } <<
+        SIGNAL(commentPosted(QVariant));
+
+    QTest::newRow("comment, with reply") <<
+        TestedMethod([](Instagram &i) { i.comment("585", "Hi there!", "@1020", "spam"); }) <<
+        QUrl("https://i.instagram.com/api/v1/media/585/comment/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+            { "containermoudle", "spam" },
+            { "comment_text", "Hi there!" },
+            { "radio-type", "wifi-none" },
+            { "idempotence_token", "ANYUUID" },
+            { "replied_to_comment_id", "@1020" },
+        } <<
+        SIGNAL(commentPosted(QVariant));
+
+    QTest::newRow("deleteComment") <<
+        TestedMethod([](Instagram &i) { i.deleteComment("567", "12345"); }) <<
+        QUrl("https://i.instagram.com/api/v1/media/567/comment/12345/delete/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+        } <<
+        SIGNAL(commentDeleted(QVariant));
+
+    QTest::newRow("likeComment") <<
+        TestedMethod([](Instagram &i) { i.likeComment("8765"); }) <<
+        QUrl("https://i.instagram.com/api/v1/media/8765/comment_like/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+        } <<
+        SIGNAL(commentLiked(QVariant));
+
+    QTest::newRow("unlikeComment") <<
+        TestedMethod([](Instagram &i) { i.unlikeComment("5555"); }) <<
+        QUrl("https://i.instagram.com/api/v1/media/5555/comment_unlike/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+        } <<
+        SIGNAL(commentUnliked(QVariant));
+
+    // people endpoint
+
+    QTest::newRow("follow") <<
+        TestedMethod([](Instagram &i) { i.follow("2732"); }) <<
+        QUrl("https://i.instagram.com/api/v1/friendships/create/2732/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+            { "user_id", "2732" },
+            { "radio_type", "wifi-none" },
+        } <<
+        SIGNAL(followDataReady(QVariant));
+
+    QTest::newRow("unFollow") <<
+        TestedMethod([](Instagram &i) { i.unFollow("2731"); }) <<
+        QUrl("https://i.instagram.com/api/v1/friendships/destroy/2731/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+            { "user_id", "2731" },
+            { "radio_type", "wifi-none" },
+        } <<
+        SIGNAL(unfollowDataReady(QVariant));
+
+    QTest::newRow("favorite") <<
+        TestedMethod([](Instagram &i) { i.favorite("2761"); }) <<
+        QUrl("https://i.instagram.com/api/v1/friendships/favorite/2761/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+        } <<
+        SIGNAL(favoriteDataReady(QVariant));
+
+    QTest::newRow("unFavorite") <<
+        TestedMethod([](Instagram &i) { i.unFavorite("2765"); }) <<
+        QUrl("https://i.instagram.com/api/v1/friendships/unfavorite/2765/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+        } <<
+        SIGNAL(unFavoriteDataReady(QVariant));
+
+    QTest::newRow("block") <<
+        TestedMethod([](Instagram &i) { i.block("1989"); }) <<
+        QUrl("https://i.instagram.com/api/v1/friendships/block/1989/?") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+            { "user_id", "1989" },
+        } <<
+        SIGNAL(blockDataReady(QVariant));
+
+    QTest::newRow("unBlock") <<
+        TestedMethod([](Instagram &i) { i.unBlock("7373"); }) <<
+        QUrl("https://i.instagram.com/api/v1/friendships/unblock/7373/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+            { "user_id", "7373" },
+        } <<
+        SIGNAL(unBlockDataReady(QVariant));
+
+    // account endpoint
+
+    QTest::newRow("removeProfilePicture") <<
+        TestedMethod([](Instagram &i) { i.removeProfilePicture(); }) <<
+        QUrl("https://i.instagram.com/api/v1/accounts/remove_profile_picture/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+        } <<
+        SIGNAL(profilePictureDeleted(QVariant));
+
+    QTest::newRow("setPrivateAccount") <<
+        TestedMethod([](Instagram &i) { i.setPrivateAccount(); }) <<
+        QUrl("https://i.instagram.com/api/v1/accounts/set_private/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+        } <<
+        SIGNAL(setProfilePrivate(QVariant));
+
+    QTest::newRow("setPublicAccount") <<
+        TestedMethod([](Instagram &i) { i.setPublicAccount(); }) <<
+        QUrl("https://i.instagram.com/api/v1/accounts/set_public/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+        } <<
+        SIGNAL(setProfilePublic(QVariant));
+
+    QTest::newRow("getCurrentUser") <<
+        TestedMethod([](Instagram &i) { i.getCurrentUser(); }) <<
+        QUrl("https://i.instagram.com/api/v1/accounts/current_user/?edit=true") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+        } <<
+        SIGNAL(currentUserDataReady(QVariant));
+
+    QTest::newRow("editProfile, male") <<
+        TestedMethod([](Instagram &i) {
+            i.editProfile("http://mysite.me", "+390732123", "John",
+                          "I was born long time ago", "john@mysite.me",
+                          true);
+        }) <<
+        QUrl("https://i.instagram.com/api/v1/accounts/edit_profile/?edit=true") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+            { "external_url", "http://mysite.me" },
+            { "phone_number", "+390732123" },
+            { "username", "just_me" },
+            { "first_name", "John" },
+            { "biography", "I was born long time ago" },
+            { "email", "john@mysite.me" },
+            { "gender", "1" },
+        } <<
+        SIGNAL(editDataReady(QVariant));
+
+    QTest::newRow("editProfile, female") <<
+        TestedMethod([](Instagram &i) {
+            i.editProfile("http://mysite.me", "+390732123", "Cathy",
+                          "This goes\non two lines.", "cathy@mysite.me",
+                          false);
+        }) <<
+        QUrl("https://i.instagram.com/api/v1/accounts/edit_profile/?edit=true") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+            { "external_url", "http://mysite.me" },
+            { "phone_number", "+390732123" },
+            { "username", "just_me" },
+            { "first_name", "Cathy" },
+            { "biography", "This goes\non two lines." },
+            { "email", "cathy@mysite.me" },
+            { "gender", "0" },
+        } <<
+        SIGNAL(editDataReady(QVariant));
+
+    QTest::newRow("checkUsername") <<
+        TestedMethod([](Instagram &i) { i.checkUsername("tom"); }) <<
+        QUrl("https://i.instagram.com/api/v1/users/check_username/") <<
+        QJsonObject {
+            { "_csrftoken", "missing" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+            { "username", "tom" },
+        } <<
+        SIGNAL(usernameCheckDataReady(QVariant));
+
+    QTest::newRow("createAccount") <<
+        TestedMethod([](Instagram &i) {
+            i.createAccount("david", "secr3t", "david@site.me");
+        }) <<
+        QUrl("https://i.instagram.com/api/v1/accounts/create/") <<
+        QJsonObject {
+            { "_csrftoken", "missing" },
+            { "_uuid", "UUID" },
+            { "username", "david" },
+            { "password", "secr3t" },
+            { "first_name", "" },
+            { "guid", "UUID" },
+            { "device_id", "DEVICEID" },
+            { "email", "david@site.me" },
+            { "force_sign_up_code", "" },
+            { "qs_stamp", "" },
+        } <<
+        SIGNAL(createAccountDataReady(QVariant));
+
+    // timeline endpoint
+
+    QTest::newRow("getTimeLineFeed, no max") <<
+        TestedMethod([](Instagram &i) { i.getTimelineFeed(); }) <<
+        QUrl("https://i.instagram.com/api/v1/feed/timeline/?"
+             "rank_token=RANKTOKEN&"
+             "ranked_content=false&"
+             "_uuid=UUID") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uuid", "UUID" },
+            { "battery_level", "100" },
+            { "is_prefetch", "0" },
+        } <<
+        SIGNAL(timelineFeedDataReady(QVariant));
+
+    QTest::newRow("getTimeLineFeed, with max") <<
+        TestedMethod([](Instagram &i) { i.getTimelineFeed("18"); }) <<
+        QUrl("https://i.instagram.com/api/v1/feed/timeline/?"
+             "rank_token=RANKTOKEN&"
+             "ranked_content=false&"
+             "_uuid=UUID&"
+             "max_id=18") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uuid", "UUID" },
+            { "battery_level", "100" },
+            { "is_prefetch", "0" },
+            { "max_id", "18" },
+        } <<
+        SIGNAL(timelineFeedDataReady(QVariant));
+
+    // usertag endpoint
+
+    QTest::newRow("removeSelftag") <<
+        TestedMethod([](Instagram &i) { i.removeSelftag("127"); }) <<
+        QUrl("https://i.instagram.com/api/v1/usertags/127/remove/") <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+        } <<
+        SIGNAL(removeSelftagDone(QVariant));
+}
+
+void QtInstagramTest::testRequests()
+{
+    QFETCH(TestedMethod, method);
+    QFETCH(QUrl, expectedUrl);
+    QFETCH(QJsonObject, expectedBody);
+    QFETCH(QString, expectedSignal);
+
     Instagram instagram;
 
     FakeNam dummyNam;
@@ -387,329 +974,38 @@ void QtInstagramTest::testGetInfoMedia()
 
     QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
 
-    instagram.getInfoMedia("121");
+    method(instagram);
     QTRY_COMPARE(requestCreated.count(), 1);
     FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
 
-    QCOMPARE(reply->url(), QUrl("https://i.instagram.com/api/v1/media/121/info/"));
-    QCOMPARE(reply->headers(), m_defaultHeaders);
-    QJsonObject expectedRequest {
-        { "_csrftoken", "Set-Cookie: csrftoken=abc" },
-        { "_uid", m_usernameId },
-        { "_uuid", m_uuid },
-        { "media_id", "121" },
-    };
-    QCOMPARE(extractSignedData(reply->body()), expectedRequest);
+    /* Replace dynamic parameters */
+    QString expectedUrlString(replaceMacros(expectedUrl.toString()));
+    QCOMPARE(reply->url(), QUrl(expectedUrlString));
 
-    sendResponseAndCheckSignal(&instagram, reply,
-                               SIGNAL(mediaInfoReady(QVariant)));
-}
-
-void QtInstagramTest::testDeleteMedia()
-{
-    Instagram instagram;
-
-    FakeNam dummyNam;
-    instagram.setNetworkAccessManager(&dummyNam);
-    doLogin(&instagram);
-
-    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
-
-    instagram.deleteMedia("135", "image");
-    QTRY_COMPARE(requestCreated.count(), 1);
-    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
-
-    QCOMPARE(reply->url(), QUrl("https://i.instagram.com/api/v1/media/135/delete/?media_type=image"));
-    QCOMPARE(reply->headers(), m_defaultHeaders);
-    QJsonObject expectedRequest {
-        { "_csrftoken", "Set-Cookie: csrftoken=abc" },
-        { "_uid", m_usernameId },
-        { "_uuid", m_uuid },
-        { "media_id", "135" },
-    };
-    QCOMPARE(extractSignedData(reply->body()), expectedRequest);
-
-    sendResponseAndCheckSignal(&instagram, reply,
-                               SIGNAL(mediaDeleted(QVariant)));
-}
-
-void QtInstagramTest::testEditMedia()
-{
-    Instagram instagram;
-
-    FakeNam dummyNam;
-    instagram.setNetworkAccessManager(&dummyNam);
-    doLogin(&instagram);
-
-    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
-
-    instagram.editMedia("987", "New caption", "image");
-    QTRY_COMPARE(requestCreated.count(), 1);
-    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
-
-    QCOMPARE(reply->url(), QUrl("https://i.instagram.com/api/v1/media/987/edit_media/"));
-    QCOMPARE(reply->headers(), m_defaultHeaders);
-    QJsonObject expectedRequest {
-        { "_csrftoken", "Set-Cookie: csrftoken=abc" },
-        { "_uid", m_usernameId },
-        { "_uuid", m_uuid },
-        { "caption_text", "New caption" },
-    };
-    QCOMPARE(extractSignedData(reply->body()), expectedRequest);
-
-    sendResponseAndCheckSignal(&instagram, reply,
-                               SIGNAL(mediaEdited(QVariant)));
-}
-
-void QtInstagramTest::testComment_data()
-{
-    QTest::addColumn<QString>("replyId");
-
-    QTest::newRow("no reply ID") <<
-        QString();
-
-    QTest::newRow("with reply") <<
-        QString("@1020");
-}
-
-void QtInstagramTest::testComment()
-{
-    QFETCH(QString, replyId);
-
-    Instagram instagram;
-
-    FakeNam dummyNam;
-    instagram.setNetworkAccessManager(&dummyNam);
-    doLogin(&instagram);
-
-    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
-
-    instagram.comment("585", "Hi there!", replyId, "spam");
-    QTRY_COMPARE(requestCreated.count(), 1);
-    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
-
-    QCOMPARE(reply->url(), QUrl("https://i.instagram.com/api/v1/media/585/comment/"));
     QCOMPARE(reply->headers(), m_defaultHeaders);
 
-    QJsonObject request = extractSignedData(reply->body());
-    QVERIFY(checkUuid(request["idempotence_token"].toString()));
-    QCOMPARE(request["_uuid"].toString(), m_uuid);
-    QCOMPARE(request["_csrftoken"].toString(), QString("Set-Cookie: csrftoken=abc"));
-    QCOMPARE(request["_uid"].toString(), m_usernameId);
-    QCOMPARE(request["containermoudle"].toString(), QString("spam"));
-    QCOMPARE(request["comment_text"].toString(), QString("Hi there!"));
-    QCOMPARE(request["radio-type"].toString(), QString("wifi-none"));
-    if (replyId.isEmpty()) {
-        QVERIFY(!request.contains("replied_to_comment_id"));
-    } else {
-        QCOMPARE(request["replied_to_comment_id"].toString(), replyId);
+    /* Replace dynamic parameters in body */
+    QJsonObject body = extractSignedData(reply->body());
+    auto i = expectedBody.begin();
+    while (i != expectedBody.end()) {
+        QJsonValueRef v = i.value();
+        if (!v.isString()) { i++; continue; }
+
+        QString value = v.toString();
+        if (value == "ANYUUID") {
+            // just check that the UUID is valid, and remove it from the object
+            QVERIFY(checkUuid(body[i.key()].toString()));
+            body.remove(i.key());
+            i = expectedBody.erase(i);
+            continue;
+        }
+        v = replaceMacros(value);
+        i++;
     }
+    QCOMPARE(body, expectedBody);
 
     sendResponseAndCheckSignal(&instagram, reply,
-                               SIGNAL(commentPosted(QVariant)));
-}
-
-void QtInstagramTest::testDeleteComment()
-{
-    Instagram instagram;
-
-    FakeNam dummyNam;
-    instagram.setNetworkAccessManager(&dummyNam);
-    doLogin(&instagram);
-
-    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
-
-    instagram.deleteComment("567", "12345");
-    QTRY_COMPARE(requestCreated.count(), 1);
-    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
-
-    QCOMPARE(reply->url(), QUrl("https://i.instagram.com/api/v1/media/567/comment/12345/delete/"));
-    QCOMPARE(reply->headers(), m_defaultHeaders);
-    QJsonObject expectedRequest {
-        { "_csrftoken", "Set-Cookie: csrftoken=abc" },
-        { "_uid", m_usernameId },
-        { "_uuid", m_uuid },
-    };
-    QCOMPARE(extractSignedData(reply->body()), expectedRequest);
-
-    sendResponseAndCheckSignal(&instagram, reply,
-                               SIGNAL(commentDeleted(QVariant)));
-}
-
-void QtInstagramTest::testLikeComment()
-{
-    Instagram instagram;
-
-    FakeNam dummyNam;
-    instagram.setNetworkAccessManager(&dummyNam);
-    doLogin(&instagram);
-
-    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
-
-    instagram.likeComment("8765");
-    QTRY_COMPARE(requestCreated.count(), 1);
-    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
-
-    QCOMPARE(reply->url(), QUrl("https://i.instagram.com/api/v1/media/8765/comment_like/"));
-    QCOMPARE(reply->headers(), m_defaultHeaders);
-    QJsonObject expectedRequest {
-        { "_csrftoken", "Set-Cookie: csrftoken=abc" },
-        { "_uid", m_usernameId },
-        { "_uuid", m_uuid },
-    };
-    QCOMPARE(extractSignedData(reply->body()), expectedRequest);
-
-    sendResponseAndCheckSignal(&instagram, reply,
-                               SIGNAL(commentLiked(QVariant)));
-}
-
-void QtInstagramTest::testUnlikeComment()
-{
-    Instagram instagram;
-
-    FakeNam dummyNam;
-    instagram.setNetworkAccessManager(&dummyNam);
-    doLogin(&instagram);
-
-    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
-
-    instagram.unlikeComment("5555");
-    QTRY_COMPARE(requestCreated.count(), 1);
-    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
-
-    QCOMPARE(reply->url(), QUrl("https://i.instagram.com/api/v1/media/5555/comment_unlike/"));
-    QCOMPARE(reply->headers(), m_defaultHeaders);
-    QJsonObject expectedRequest {
-        { "_csrftoken", "Set-Cookie: csrftoken=abc" },
-        { "_uid", m_usernameId },
-        { "_uuid", m_uuid },
-    };
-    QCOMPARE(extractSignedData(reply->body()), expectedRequest);
-
-    sendResponseAndCheckSignal(&instagram, reply,
-                               SIGNAL(commentUnliked(QVariant)));
-}
-
-void QtInstagramTest::testGetComments_data()
-{
-    QTest::addColumn<QString>("maxId");
-    QTest::addColumn<QUrl>("expectedUrl");
-
-    QTest::newRow("no max") <<
-        QString() <<
-        QUrl("https://i.instagram.com/api/v1/media/321/comments/?ig_sig_key_version=4");
-
-    QTest::newRow("with max") <<
-        QString("789") <<
-        QUrl("https://i.instagram.com/api/v1/media/321/comments/?ig_sig_key_version=4&max_id=789");
-}
-
-void QtInstagramTest::testGetComments()
-{
-    QFETCH(QString, maxId);
-    QFETCH(QUrl, expectedUrl);
-
-    Instagram instagram;
-
-    FakeNam dummyNam;
-    instagram.setNetworkAccessManager(&dummyNam);
-    doLogin(&instagram);
-
-    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
-
-    instagram.getComments("321", maxId);
-    QTRY_COMPARE(requestCreated.count(), 1);
-    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
-
-    QCOMPARE(reply->url(), expectedUrl);
-    QCOMPARE(reply->headers(), m_defaultHeaders);
-    QVERIFY(reply->body().isEmpty());
-
-    sendResponseAndCheckSignal(&instagram, reply,
-                               SIGNAL(mediaCommentsDataReady(QVariant)));
-}
-
-void QtInstagramTest::testGetLikedMedia_data()
-{
-    QTest::addColumn<QString>("maxId");
-    QTest::addColumn<QUrl>("expectedUrl");
-
-    QTest::newRow("no max") <<
-        QString() <<
-        QUrl("https://i.instagram.com/api/v1/feed/liked/");
-
-    QTest::newRow("with max") <<
-        QString("12") <<
-        QUrl("https://i.instagram.com/api/v1/feed/liked/?max_id=12");
-}
-
-void QtInstagramTest::testGetLikedMedia()
-{
-    QFETCH(QString, maxId);
-    QFETCH(QUrl, expectedUrl);
-
-    Instagram instagram;
-
-    FakeNam dummyNam;
-    instagram.setNetworkAccessManager(&dummyNam);
-    doLogin(&instagram);
-
-    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
-
-    instagram.getLikedMedia(maxId);
-    QTRY_COMPARE(requestCreated.count(), 1);
-    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
-
-    QCOMPARE(reply->url(), expectedUrl);
-    QCOMPARE(reply->headers(), m_defaultHeaders);
-    QVERIFY(reply->body().isEmpty());
-
-    sendResponseAndCheckSignal(&instagram, reply,
-                               SIGNAL(likedMediaDataReady(QVariant)));
-}
-
-void QtInstagramTest::testGetMediaLikers()
-{
-    Instagram instagram;
-
-    FakeNam dummyNam;
-    instagram.setNetworkAccessManager(&dummyNam);
-    doLogin(&instagram);
-
-    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
-
-    instagram.getMediaLikers("3232");
-    QTRY_COMPARE(requestCreated.count(), 1);
-    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
-
-    QCOMPARE(reply->url(), QUrl("https://i.instagram.com/api/v1/media/3232/likers/"));
-    QCOMPARE(reply->headers(), m_defaultHeaders);
-    QVERIFY(reply->body().isEmpty());
-
-    sendResponseAndCheckSignal(&instagram, reply,
-                               SIGNAL(mediaLikersDataReady(QVariant)));
-}
-
-void QtInstagramTest::testGetInfoByName()
-{
-    Instagram instagram;
-
-    FakeNam dummyNam;
-    instagram.setNetworkAccessManager(&dummyNam);
-    doLogin(&instagram);
-
-    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
-
-    instagram.getInfoByName("tom_brown");
-    QTRY_COMPARE(requestCreated.count(), 1);
-    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
-
-    QCOMPARE(reply->url(), QUrl("https://i.instagram.com/api/v1/users/tom_brown/usernameinfo/"));
-    QCOMPARE(reply->headers(), m_defaultHeaders);
-    QVERIFY(reply->body().isEmpty());
-
-    sendResponseAndCheckSignal(&instagram, reply,
-                               SIGNAL(infoByNameDataReady(QVariant)));
+                               expectedSignal.toUtf8().constData());
 }
 
 void QtInstagramTest::testGetInfoById()
@@ -735,191 +1031,6 @@ void QtInstagramTest::testGetInfoById()
 
     sendResponseAndCheckSignal(&instagram, reply,
                                SIGNAL(infoByIdDataReady(QVariant)));
-}
-
-void QtInstagramTest::testGetRecentActivityInbox()
-{
-    Instagram instagram;
-
-    FakeNam dummyNam;
-    instagram.setNetworkAccessManager(&dummyNam);
-    doLogin(&instagram);
-
-    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
-
-    instagram.getRecentActivityInbox();
-    QTRY_COMPARE(requestCreated.count(), 1);
-    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
-
-    QCOMPARE(reply->url(), QUrl("https://i.instagram.com/api/v1/news/inbox/?"
-                                "activity_module=all&show_su=true"));
-    QCOMPARE(reply->headers(), m_defaultHeaders);
-    QVERIFY(reply->body().isEmpty());
-
-    sendResponseAndCheckSignal(&instagram, reply,
-                               SIGNAL(recentActivityInboxDataReady(QVariant)));
-}
-
-void QtInstagramTest::testGetFollowingRecentActivity()
-{
-    Instagram instagram;
-
-    FakeNam dummyNam;
-    instagram.setNetworkAccessManager(&dummyNam);
-    doLogin(&instagram);
-
-    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
-
-    instagram.getFollowingRecentActivity();
-    QTRY_COMPARE(requestCreated.count(), 1);
-    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
-
-    QCOMPARE(reply->url(), QUrl("https://i.instagram.com/api/v1/news/?"));
-    QCOMPARE(reply->headers(), m_defaultHeaders);
-    QVERIFY(reply->body().isEmpty());
-
-    sendResponseAndCheckSignal(&instagram, reply,
-                               SIGNAL(followingRecentActivityDataReady(QVariant)));
-}
-
-void QtInstagramTest::testGetFriendship()
-{
-    Instagram instagram;
-
-    FakeNam dummyNam;
-    instagram.setNetworkAccessManager(&dummyNam);
-    doLogin(&instagram);
-
-    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
-
-    instagram.getFriendship("tom");
-    QTRY_COMPARE(requestCreated.count(), 1);
-    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
-
-    QCOMPARE(reply->url(), QUrl("https://i.instagram.com/api/v1/friendships/show/tom/"));
-    QCOMPARE(reply->headers(), m_defaultHeaders);
-    QVERIFY(reply->body().isEmpty());
-
-    sendResponseAndCheckSignal(&instagram, reply,
-                               SIGNAL(friendshipDataReady(QVariant)));
-}
-
-void QtInstagramTest::testGetFollowing_data()
-{
-    QTest::addColumn<QString>("maxId");
-    QTest::addColumn<QString>("searchQuery");
-    QTest::addColumn<QUrl>("expectedUrl");
-
-    QTest::newRow("no params") <<
-        QString() <<
-        QString() <<
-        QUrl("https://i.instagram.com/api/v1/friendships/john/following/?"
-             "rank_token=RANKTOKEN");
-
-    QTest::newRow("with max") <<
-        QString("45") <<
-        QString() <<
-        QUrl("https://i.instagram.com/api/v1/friendships/john/following/?"
-             "rank_token=RANKTOKEN&max_id=45");
-
-    QTest::newRow("with query") <<
-        QString() <<
-        QString("search_query") <<
-        QUrl("https://i.instagram.com/api/v1/friendships/john/following/?"
-             "rank_token=RANKTOKEN&query=search_query");
-
-    QTest::newRow("with max and query") <<
-        QString("981") <<
-        QString("search_query2") <<
-        QUrl("https://i.instagram.com/api/v1/friendships/john/following/?"
-             "rank_token=RANKTOKEN&max_id=981&query=search_query2");
-}
-
-void QtInstagramTest::testGetFollowing()
-{
-    QFETCH(QString, maxId);
-    QFETCH(QString, searchQuery);
-    QFETCH(QUrl, expectedUrl);
-
-    Instagram instagram;
-
-    FakeNam dummyNam;
-    instagram.setNetworkAccessManager(&dummyNam);
-    doLogin(&instagram);
-
-    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
-
-    instagram.getFollowing("john", maxId, searchQuery);
-    QTRY_COMPARE(requestCreated.count(), 1);
-    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
-
-    QString expectedUrlString(expectedUrl.toString().replace("RANKTOKEN", m_rankToken));
-    QCOMPARE(reply->url(), QUrl(expectedUrlString));
-
-    QCOMPARE(reply->headers(), m_defaultHeaders);
-    QVERIFY(reply->body().isEmpty());
-
-    sendResponseAndCheckSignal(&instagram, reply,
-                               SIGNAL(followingDataReady(QVariant)));
-}
-
-void QtInstagramTest::testGetFollowers_data()
-{
-    QTest::addColumn<QString>("maxId");
-    QTest::addColumn<QString>("searchQuery");
-    QTest::addColumn<QUrl>("expectedUrl");
-
-    QTest::newRow("no params") <<
-        QString() <<
-        QString() <<
-        QUrl("https://i.instagram.com/api/v1/friendships/john/followers/?"
-             "rank_token=RANKTOKEN");
-
-    QTest::newRow("with max") <<
-        QString("45") <<
-        QString() <<
-        QUrl("https://i.instagram.com/api/v1/friendships/john/followers/?"
-             "rank_token=RANKTOKEN&max_id=45");
-
-    QTest::newRow("with query") <<
-        QString() <<
-        QString("search_query") <<
-        QUrl("https://i.instagram.com/api/v1/friendships/john/followers/?"
-             "rank_token=RANKTOKEN&query=search_query");
-
-    QTest::newRow("with max and query") <<
-        QString("981") <<
-        QString("search_query2") <<
-        QUrl("https://i.instagram.com/api/v1/friendships/john/followers/?"
-             "rank_token=RANKTOKEN&max_id=981&query=search_query2");
-}
-
-void QtInstagramTest::testGetFollowers()
-{
-    QFETCH(QString, maxId);
-    QFETCH(QString, searchQuery);
-    QFETCH(QUrl, expectedUrl);
-
-    Instagram instagram;
-
-    FakeNam dummyNam;
-    instagram.setNetworkAccessManager(&dummyNam);
-    doLogin(&instagram);
-
-    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
-
-    instagram.getFollowers("john", maxId, searchQuery);
-    QTRY_COMPARE(requestCreated.count(), 1);
-    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
-
-    QString expectedUrlString(expectedUrl.toString().replace("RANKTOKEN", m_rankToken));
-    QCOMPARE(reply->url(), QUrl(expectedUrlString));
-
-    QCOMPARE(reply->headers(), m_defaultHeaders);
-    QVERIFY(reply->body().isEmpty());
-
-    sendResponseAndCheckSignal(&instagram, reply,
-                               SIGNAL(followersDataReady(QVariant)));
 }
 
 QTEST_GUILESS_MAIN(QtInstagramTest)
