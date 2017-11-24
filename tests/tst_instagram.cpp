@@ -1,6 +1,7 @@
 #include "QtInstagram"
 
 #include <QDebug>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QQmlComponent>
@@ -35,6 +36,8 @@ private Q_SLOTS:
     void initTestCase();
     void testLogin_data();
     void testLogin();
+    void testPostImage_data();
+    void testPostImage();
 
     void testBodilessRequests_data();
     void testBodilessRequests();
@@ -47,8 +50,12 @@ private:
     void doLogin(Instagram *instagram);
     void sendResponseAndCheckSignal(Instagram *instagram, FakeReply *reply,
                                     const char *signalName);
-    bool checkUuid(const QString &uuid);
-    QString &replaceMacros(QString source);
+    bool checkUuid(const QString &uuid) const;
+    bool checkDateTime(const QString &string) const;
+    void checkUploadRequest(FakeReply *request, const QString &filePath,
+                            const QString &uploadId = QString());
+    QString &replaceMacros(QString source) const;
+    void replaceMacros(QJsonObject &data, QJsonObject &expectedData) const;
 
 private:
     QString m_deviceId;
@@ -123,18 +130,75 @@ void QtInstagramTest::doLogin(Instagram *instagram)
     QTRY_COMPARE(profileConnected.count(), 1);
 }
 
-bool QtInstagramTest::checkUuid(const QString &uuid)
+bool QtInstagramTest::checkUuid(const QString &uuid) const
 {
     return !QUuid(uuid).isNull();
 }
 
-QString &QtInstagramTest::replaceMacros(QString source)
+bool QtInstagramTest::checkDateTime(const QString &string) const
+{
+    QDateTime dateTime = QDateTime::fromString(string, "yyyy:MM:dd HH:mm:ss");
+    return dateTime.isValid();
+}
+
+void QtInstagramTest::checkUploadRequest(FakeReply *request,
+                                         const QString &filePath,
+                                         const QString &uploadId)
+{
+    QJsonObject headers = request->headers();
+    QString contentType = headers["Content-Type"].toString();
+
+    const QString contentTypeStart("multipart/form-data; boundary=");
+    QCOMPARE(contentType.left(contentTypeStart.length()), contentTypeStart);
+
+    const QString boundary = contentType.mid(contentTypeStart.length());
+    qDebug() << "boundary" << boundary;
+    QByteArray boundaryLine("--" + boundary.toUtf8() + "\r\n");
+
+    int offset = 0;
+    QByteArray body = request->body();
+    QCOMPARE(body.mid(offset, boundaryLine.length()), boundaryLine);
+    offset += boundaryLine.length();
+
+    QVERIFY(false);
+}
+
+QString &QtInstagramTest::replaceMacros(QString source) const
 {
     return source.
         replace("DEVICEID", m_deviceId).
         replace("RANKTOKEN", m_rankToken).
         replace("USERNAMEID", m_usernameId).
         replace("UUID", m_uuid);
+}
+
+void QtInstagramTest::replaceMacros(QJsonObject &data, QJsonObject &expectedData) const
+{
+    auto i = expectedData.begin();
+    while (i != expectedData.end()) {
+        QJsonValueRef v = i.value();
+        if (!v.isString()) { i++; continue; }
+
+        QString value = v.toString();
+        bool mustRemove = false;
+        if (value == "ANYUUID") {
+            // just check that the UUID is valid, and remove it from the object
+            if (checkUuid(data[i.key()].toString())) {
+                mustRemove = true;
+            }
+        } else if (value == "DATETIME") {
+            if (checkDateTime(data[i.key()].toString())) {
+                mustRemove = true;
+            }
+        }
+        if (mustRemove) {
+            data.remove(i.key());
+            i = expectedData.erase(i);
+            continue;
+        }
+        v = replaceMacros(value);
+        i++;
+    }
 }
 
 void QtInstagramTest::initTestCase()
@@ -278,6 +342,222 @@ void QtInstagramTest::testLogin()
         QCOMPARE(syncData["id"].toString(), expectedUsernameId);
         QCOMPARE(syncData["experiments"].toString().length(), 12761);
     }
+}
+
+void QtInstagramTest::testPostImage_data()
+{
+    QTest::addColumn<QString>("filePath");
+    QTest::addColumn<QString>("uploadId");
+    QTest::addColumn<QString>("uploadReply");
+    QTest::addColumn<QJsonObject>("expectedConfigureBody");
+    QTest::addColumn<QString>("expectedError");
+
+    QTest::newRow("missing file") <<
+        "/tmp/this_file_does_not_exist.jpg" <<
+        "aabbcc" <<
+        "" <<
+        QJsonObject {} <<
+        "Image not found";
+
+    QTest::newRow("rect image, server failure") <<
+        DATA_DIR "/rect.jpg" <<
+        "aabbcc" <<
+        "{\"status\": \"fail\", \"message\": \"Bad luck\"}" <<
+        QJsonObject {} <<
+        QString("Bad luck");
+
+    QTest::newRow("rect image, wrong server reply") <<
+        DATA_DIR "/rect.jpg" <<
+        "aabbcc" <<
+        "{\"status\": \"ok\"}" <<
+        QJsonObject {} <<
+        QString("Wrong UPLOAD_ID:");
+
+    QTest::newRow("rect image, success") <<
+        DATA_DIR "/rect.jpg" <<
+        "aabbcc" <<
+        "{\"status\": \"ok\", \"upload_id\": \"123\"}" <<
+        QJsonObject {
+            { "_csrftoken", "Set-Cookie: csrftoken=abc" },
+            { "_uid", "USERNAMEID" },
+            { "_uuid", "UUID" },
+            { "upload_id", "123" },
+            { "camera_model", "HM1S" },
+            { "source_type", 3 },
+            { "date_time_original", "DATETIME" },
+            { "camera_make", "XIAOMI" },
+            { "caption", "This is the caption" },
+            { "device", QJsonObject {
+                { "manufacturer", "Xiaomi" },
+                { "model", "HM 1SW" },
+                { "android_version", 18 },
+                { "android_release", "4.3" },
+            } },
+            { "edits", QJsonObject {
+                { "crop_original_size", QJsonArray { 600, 400 } },
+                { "crop_zoom", 1.3333334 },
+                { "crop_center", QJsonArray { 0.0, -0.0 } },
+            } },
+            { "extra", QJsonObject {
+                { "source_width", 600 },
+                { "source_height", 400 },
+            } },
+        } <<
+        QString();
+}
+
+void QtInstagramTest::testPostImage()
+{
+    QFETCH(QString, filePath);
+    QFETCH(QString, uploadId);
+    QFETCH(QString, uploadReply);
+    QFETCH(QJsonObject, expectedConfigureBody);
+    QFETCH(QString, expectedError);
+
+    Instagram instagram;
+    QSignalSpy error(&instagram, &Instagram::error);
+
+    FakeNam dummyNam;
+    instagram.setNetworkAccessManager(&dummyNam);
+    doLogin(&instagram);
+
+    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
+
+    instagram.postImage(filePath, "This is the caption", uploadId);
+    if (requestCreated.isEmpty()) {
+        QCOMPARE(error.count(), 1);
+        QCOMPARE(error.at(0).at(0).toString(), expectedError);
+        return;
+    }
+
+    QCOMPARE(requestCreated.count(), 1);
+    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
+
+    QCOMPARE(reply->url(),
+             QUrl("https://i.instagram.com/api/v1/upload/photo/"));
+
+    QJsonObject headers = reply->headers();
+    QString contentType = headers["Content-Type"].toString();
+
+    const QString contentTypeStart("multipart/form-data; boundary=");
+    QCOMPARE(contentType.left(contentTypeStart.length()), contentTypeStart);
+
+    const QString boundary = contentType.mid(contentTypeStart.length());
+    QByteArray boundaryLine("--" + boundary.toUtf8() + "\r\n");
+
+    QByteArray body = reply->body();
+    QByteArray dataBlock;
+    int offset = 0;
+
+    // upload_id
+    QCOMPARE(body.mid(offset, boundaryLine.length()), boundaryLine);
+    offset += boundaryLine.length();
+
+    dataBlock = "Content-Disposition: form-data; name=\"upload_id\"\r\n\r\n";
+    QCOMPARE(body.mid(offset, dataBlock.length()), dataBlock);
+    offset += dataBlock.length();
+
+    if (uploadId.isEmpty()) {
+        int uploadIdEnd = body.indexOf("\r\n", offset);
+        uploadId = body.mid(offset, uploadIdEnd - offset);
+    } else {
+        dataBlock = uploadId.toUtf8() + "\r\n";
+        QCOMPARE(body.mid(offset, dataBlock.length()), dataBlock);
+        offset += dataBlock.length();
+    }
+
+    // _uuid
+    QCOMPARE(body.mid(offset, boundaryLine.length()), boundaryLine);
+    offset += boundaryLine.length();
+
+    dataBlock = "Content-Disposition: form-data; name=\"_uuid\"\r\n\r\n";
+    QCOMPARE(body.mid(offset, dataBlock.length()), dataBlock);
+    offset += dataBlock.length();
+
+    dataBlock = m_uuid.toUtf8() + "\r\n";
+    QCOMPARE(body.mid(offset, dataBlock.length()), dataBlock);
+    offset += dataBlock.length();
+
+    // _csrftoken
+    QCOMPARE(body.mid(offset, boundaryLine.length()), boundaryLine);
+    offset += boundaryLine.length();
+
+    dataBlock = "Content-Disposition: form-data; name=\"_csrftoken\"\r\n\r\n"
+        "abc\r\n";
+    QCOMPARE(body.mid(offset, dataBlock.length()), dataBlock);
+    offset += dataBlock.length();
+
+    // image_compression
+    QCOMPARE(body.mid(offset, boundaryLine.length()), boundaryLine);
+    offset += boundaryLine.length();
+
+    dataBlock = "Content-Disposition: form-data; name=\"image_compression\"\r\n\r\n"
+        "{\"lib_name\":\"jt\",\"lib_version\":\"1.3.0\",\"quality\":\"70\"}\r\n";
+    QCOMPARE(body.mid(offset, dataBlock.length()), dataBlock);
+    offset += dataBlock.length();
+
+    // photo
+    QCOMPARE(body.mid(offset, boundaryLine.length()), boundaryLine);
+    offset += boundaryLine.length();
+
+    QFileInfo fileInfo(filePath);
+    QByteArray ext = fileInfo.completeSuffix().toUtf8();
+    dataBlock = "Content-Disposition: form-data; name=\"photo\"; "
+        "filename=\"pending_media_" + uploadId.toUtf8() + "." + ext + "\"\r\n"
+        "Content-Transfer-Encoding: binary\r\n"
+        "Content-Type: application/octet-stream\r\n\r\n";
+    QCOMPARE(body.mid(offset, dataBlock.length()), dataBlock);
+    offset += dataBlock.length();
+
+    QFile file(filePath);
+    QVERIFY(file.open(QIODevice::ReadOnly));
+    dataBlock = file.readAll() + "\r\n";
+    QCOMPARE(body.mid(offset, dataBlock.length()), dataBlock);
+    offset += dataBlock.length();
+
+    // end message
+    dataBlock = "--" + boundary.toUtf8() + "--";
+    QCOMPARE(body.mid(offset, dataBlock.length()), dataBlock);
+    offset += dataBlock.length();
+
+    QCOMPARE(body.length(), offset);
+
+    // check headers
+    int contentLength = headers["Content-Length"].toString().toInt();
+    QCOMPARE(contentLength, body.length());
+
+    headers.remove("Content-Length");
+    headers.remove("Content-Type");
+    QJsonObject expectedHeaders {
+        { "Connection", "close" },
+        { "Accept", "*/*" },
+        { "User-Agent", "Instagram 10.33.0 Android (18/4.3; 320dpi; 720x1280; "
+            "Xiaomi; HM 1SW; armani; qcom; en_US)" },
+        { "Cookie2","$Version=1" },
+        { "Accept-Language","en-US" },
+        { "Accept-Encoding","gzip" },
+    };
+    QCOMPARE(headers, expectedHeaders);
+
+    // send the reply
+    reply->setData(uploadReply.toUtf8());
+    if (!expectedError.isEmpty()) {
+        QTRY_COMPARE(error.count(), 1);
+        QCOMPARE(error.at(0).at(0).toString(), expectedError);
+        return;
+    }
+    QTRY_COMPARE(requestCreated.count(), 2);
+    reply = requestCreated.at(1).at(0).value<FakeReply*>();
+    QCOMPARE(error.count(), 0);
+
+    QCOMPARE(reply->url(),
+             QUrl("https://i.instagram.com/api/v1/media/configure/"));
+    QJsonObject configureBody = extractSignedData(reply->body());
+    replaceMacros(configureBody, expectedConfigureBody);
+    QCOMPARE(configureBody, expectedConfigureBody);
+
+    sendResponseAndCheckSignal(&instagram, reply,
+                               SIGNAL(imageConfigureDataReady(QVariant)));
 }
 
 void QtInstagramTest::testBodilessRequests_data()

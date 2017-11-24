@@ -17,6 +17,10 @@ SOURCES += \
 HEADERS += \
     fake_network.h
 
+DATA_DIR = $${PWD}/data
+DEFINES += \
+    DATA_DIR=\\\"$${DATA_DIR}\\\"
+
 check.commands = ./$${TARGET}
 check.depends = $${TARGET}
 QMAKE_EXTRA_TARGETS += check
