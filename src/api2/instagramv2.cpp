@@ -265,6 +265,7 @@ void Instagramv2::postImage(QString path, QString caption, QString upload_id)
     if(!image.open(QIODevice::ReadOnly))
     {
         Q_EMIT error("Image not found");
+        return;
     }
 
     QByteArray dataStream = image.readAll();
