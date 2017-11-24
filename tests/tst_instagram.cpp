@@ -41,9 +41,6 @@ private Q_SLOTS:
     void testRequests_data();
     void testRequests();
 
-    // people endpoint
-    void testGetInfoById();
-
 private:
     QString extractUuid(const QUrl &url) const;
     QJsonObject extractSignedData(const QByteArray &body) const;
@@ -345,6 +342,11 @@ void QtInstagramTest::testBodilessRequests_data()
         TestedMethod([](Instagram &i) { i.getInfoByName("tom_brown"); }) <<
         QUrl("https://i.instagram.com/api/v1/users/tom_brown/usernameinfo/") <<
         SIGNAL(infoByNameDataReady(QVariant));
+
+    QTest::newRow("getInfoById") <<
+        TestedMethod([](Instagram &i) { i.getInfoById("1234"); }) <<
+        QUrl("https://i.instagram.com/api/v1/users/1234/info/?device_id=DEVICEID") <<
+        SIGNAL(infoByIdDataReady(QVariant));
 
     QTest::newRow("getFollowingRecentActivity") <<
         TestedMethod([](Instagram &i) { i.getFollowingRecentActivity(); }) <<
@@ -1006,31 +1008,6 @@ void QtInstagramTest::testRequests()
 
     sendResponseAndCheckSignal(&instagram, reply,
                                expectedSignal.toUtf8().constData());
-}
-
-void QtInstagramTest::testGetInfoById()
-{
-    Instagram instagram;
-
-    FakeNam dummyNam;
-    instagram.setNetworkAccessManager(&dummyNam);
-    doLogin(&instagram);
-
-    QSignalSpy requestCreated(&dummyNam, &FakeNam::requestCreated);
-
-    instagram.getInfoById("1234");
-    QTRY_COMPARE(requestCreated.count(), 1);
-    FakeReply *reply = requestCreated.at(0).at(0).value<FakeReply*>();
-
-    QCOMPARE(reply->url().toString(QUrl::RemoveQuery),
-             QString("https://i.instagram.com/api/v1/users/1234/info/"));
-    QUrlQuery query(reply->url());
-    QVERIFY(query.hasQueryItem("device_id"));
-    QCOMPARE(reply->headers(), m_defaultHeaders);
-    QVERIFY(reply->body().isEmpty());
-
-    sendResponseAndCheckSignal(&instagram, reply,
-                               SIGNAL(infoByIdDataReady(QVariant)));
 }
 
 QTEST_GUILESS_MAIN(QtInstagramTest)
