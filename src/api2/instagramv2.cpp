@@ -24,23 +24,12 @@ Instagramv2Private::Instagramv2Private(Instagramv2 *q):
     m_manager(0),
     q_ptr(q)
 {
-    m_data_path = QDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
-
-    if(!m_data_path.exists())
-    {
-        m_data_path.mkpath(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
-    }
-
     m_jar = new QNetworkCookieJar;
-    loadCookies();
 
     setNetworkAccessManager(new QNetworkAccessManager());
 
     QUuid uuid;
     m_uuid = uuid.createUuid().toString().remove('{').remove('}');
-
-    m_device_id = generateDeviceId();
-    setUser();
 }
 
 void Instagramv2Private::setNetworkAccessManager(QNetworkAccessManager *nam)
@@ -105,6 +94,16 @@ void Instagramv2Private::setUser()
     }
     else
     {
+        m_data_path = QDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation) +
+                           "/" + m_username);
+        if (!m_data_path.exists())
+        {
+            m_data_path.mkpath(".");
+        }
+        loadCookies();
+
+        m_device_id = generateDeviceId();
+
         QFile f_cookie(m_data_path.absolutePath()+"/cookies.dat");
         QFile f_userId(m_data_path.absolutePath()+"/userId.dat");
         QFile f_token(m_data_path.absolutePath()+"/token.dat");
