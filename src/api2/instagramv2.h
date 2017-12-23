@@ -157,6 +157,7 @@ Q_SIGNALS:
     void mediaCommentsDataReady(QVariant answer);
     void likedMediaDataReady(QVariant answer);
     void mediaLikersDataReady(QVariant answer);
+    void uploadProgress(qint64 bytesSent, qint64 bytesTotal);
 
 //People
     void followingDataReady(QVariant answer);

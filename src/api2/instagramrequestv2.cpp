@@ -17,6 +17,7 @@ InstagramRequestv2::InstagramRequestv2(QNetworkReply *reply,
     m_reply(reply)
 {
     QObject::connect(reply, &QNetworkReply::finished, this, &InstagramRequestv2::finishGetUrl);
+    QObject::connect(reply, &QNetworkReply::uploadProgress, this, &InstagramRequestv2::uploadProgress);
 }
 
 

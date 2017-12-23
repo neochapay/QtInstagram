@@ -26,6 +26,11 @@ public:
         }
         if (outgoingData) {
             m_body = outgoingData->readAll();
+            qint64 totalSize = m_body.count();
+            QMetaObject::invokeMethod(this, "uploadProgress",
+                                      Qt::QueuedConnection,
+                                      Q_ARG(qint64, totalSize / 10),
+                                      Q_ARG(qint64, totalSize));
         }
         setRequest(req);
         QNetworkReply::open(QIODevice::ReadOnly);

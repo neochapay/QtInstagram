@@ -20,6 +20,7 @@ private:
 
 Q_SIGNALS:
     void replyStringReady(QVariant ans);
+    void uploadProgress(qint64 bytesSent, qint64 bytesTotal);
 
 public Q_SLOTS:
 

@@ -308,6 +308,8 @@ void Instagramv2::postImage(QString path, QString caption, QString upload_id)
         d->fileRequest("upload/photo/",boundary, body);
 
     QObject::connect(putPhotoReqest,&InstagramRequestv2::replyStringReady,d,&Instagramv2Private::configurePhoto);
+    QObject::connect(putPhotoReqest, &InstagramRequestv2::uploadProgress,
+                     this, &Instagramv2::uploadProgress);
 }
 
 void Instagramv2Private::configurePhoto(QVariant answer)

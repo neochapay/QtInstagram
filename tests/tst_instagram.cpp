@@ -13,6 +13,7 @@
 #include <QTest>
 #include <QUuid>
 #include <QUrlQuery>
+#include <cmath>
 #include "fake_network.h"
 
 typedef std::function<void(Instagram &)> TestedMethod;
@@ -416,6 +417,7 @@ void QtInstagramTest::testPostImage()
 
     Instagram instagram;
     QSignalSpy error(&instagram, &Instagram::error);
+    QSignalSpy uploadProgress(&instagram, &Instagram::uploadProgress);
 
     FakeNam dummyNam;
     instagram.setNetworkAccessManager(&dummyNam);
@@ -538,6 +540,11 @@ void QtInstagramTest::testPostImage()
         { "Accept-Encoding","gzip" },
     };
     QCOMPARE(headers, expectedHeaders);
+
+    QTRY_COMPARE(uploadProgress.count(), 1);
+    int percent = round(100 * double(uploadProgress.at(0).at(0).toInt()) /
+        uploadProgress.at(0).at(1).toInt());
+    QCOMPARE(percent, 10);
 
     // send the reply
     reply->setData(uploadReply.toUtf8());
